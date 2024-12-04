@@ -1,0 +1,3 @@
+M001    | Nasi Goreng Spesial  | 20000
+M002    | Nasi Padang          | 25000
+M003    | Nasi Kebuli          | 11000
