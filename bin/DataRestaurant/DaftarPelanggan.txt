@@ -1,4 +1,4 @@
-G001  | Raditya Rahmadhani        | -          | 30000
-G002  | Haikal Gibran             | -          | 20000
-M001  | Ayu Nadhiroh              | 2024/10/21 | 40000
-M002  | Fikri Iqbal               | 2024/08/01 | 40000
+GT001 | Raditya Rahmadhani        | -          | 30000
+GT002 | Haikal Gibran             | -          | 20000
+MEM001 | Ayu Nadhiroh              | 2024/10/21 | 40000
+MEM002 | Fikri Iqbal               | 2024/08/01 | 40000

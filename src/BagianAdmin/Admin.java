@@ -6,10 +6,11 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import InterfaceRestaurant.ReadData;
 import Menu.Menu;
 import Pelanggan.*;
 
-public class Admin {
+public class Admin implements ReadData{
 
     private HashMap<String, Menu> daftarMenu = new HashMap<>();
     private HashMap<String, Pelanggan> daftarPelanggan = new HashMap<>();
@@ -23,7 +24,10 @@ public class Admin {
     }
 
     public void createMenu(String input) throws Exception {
-        loadMenu();
+        if(daftarMenu.isEmpty()){
+            loadMenu();
+        }
+
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarMenu.txt";
         try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
             if (input.startsWith("CREATE MENU")) {
@@ -46,10 +50,53 @@ public class Admin {
         }
     }
 
+    
+    public void createPelanggan(String input) throws Exception {
+        if(daftarPelanggan.isEmpty()){
+            loadPelanggan();
+        }
+        
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
+        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
+            if (input.startsWith("CREATE PELANGGAN")) {
+                String[] bagianPelanggan = input.split(" ", 3);
+                String dataPelanggan = bagianPelanggan[2];
+                String[] unitDataPelanggan = dataPelanggan.split("\\|");
+                String idPelanggan = unitDataPelanggan[0].trim();
+                String namaPelanggan = unitDataPelanggan[1].trim();
+                String tanggalMenjadiMember = unitDataPelanggan[2].trim();
+                String saldoAwal = unitDataPelanggan[3].trim();
+                
+                String firstName;
+                String lastName;
+                
+                if (namaPelanggan.contains(" ")) {
+                    firstName = namaPelanggan.substring(0, namaPelanggan.indexOf(' '));
+                    lastName = namaPelanggan.substring(namaPelanggan.indexOf(' ') + 1);
+                } else {
+                    firstName = namaPelanggan;
+                    lastName = "";
+                }
+                
+                if (daftarPelanggan.containsKey(idPelanggan)) {
+                    System.out.println("CREATE PELANGGAN: " + idPelanggan + " IS EXISTS");
+                    return;
+                }
+                
+                daftarPelanggan.put(idPelanggan, new Pelanggan(idPelanggan, firstName, lastName, tanggalMenjadiMember,
+                Integer.parseInt(saldoAwal)));
+                output.printf("%-5s %c %-25s %c %-10s %c %s\n", idPelanggan, '|', namaPelanggan, '|',
+                tanggalMenjadiMember, '|', saldoAwal);
+                System.out.println("CREATE PELANGGAN SUCCESS: " + idPelanggan);
+            }
+        }
+    }
+    
     public void readMenu(String input) throws Exception {
-        if (input.startsWith("READ MENU")) {
+        if(daftarMenu.isEmpty()){
             loadMenu();
-
+        }
+        if (input.startsWith("READ MENU")) {
             System.out.println("=".repeat(39));
             System.out.println(" ".repeat(14) + "Daftar Menu");
             System.out.println("=".repeat(39));
@@ -59,8 +106,24 @@ public class Admin {
             }
         }
     }
+    public void readPelanggan(String input) throws Exception {
+        if(daftarPelanggan.isEmpty()){
+            loadPelanggan();
+        }
+        if (input.startsWith("READ PELANGGAN")) {
+            System.out.println("=".repeat(58));
+            System.out.println(" ".repeat(21) + "Daftar Pelanggan");
+            System.out.println("=".repeat(58));
 
-    public void loadMenu() throws Exception {
+            for (Pelanggan pelanggan : daftarPelanggan.values()) {
+                System.out.printf("%-11s %-24s %-14s %d\n", pelanggan.getIdPelanggan(), pelanggan.getFullName(),
+                        pelanggan.getTanggalMenjadiMember(), pelanggan.getSaldoAwal());
+            }
+        }
+    }
+
+    @Override
+    public void loadMenu() throws Exception{
         File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarMenu.txt");
         Scanner in = new Scanner(file);
 
@@ -80,45 +143,8 @@ public class Admin {
         }
     }
 
-    public void createPelanggan(String input) throws Exception {
-        loadPelanggan();
-        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
-        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
-            if (input.startsWith("CREATE PELANGGAN")) {
-                String[] bagianPelanggan = input.split(" ", 3);
-                String dataPelanggan = bagianPelanggan[2];
-                String[] unitDataPelanggan = dataPelanggan.split("\\|");
-                String idPelanggan = unitDataPelanggan[0].trim();
-                String namaPelanggan = unitDataPelanggan[1].trim();
-                String tanggalMenjadiMember = unitDataPelanggan[2].trim();
-                String saldoAwal = unitDataPelanggan[3].trim();
-
-                String firstName;
-                String lastName;
-
-                if (namaPelanggan.contains(" ")) {
-                    firstName = namaPelanggan.substring(0, namaPelanggan.indexOf(' '));
-                    lastName = namaPelanggan.substring(namaPelanggan.indexOf(' ') + 1);
-                } else {
-                    firstName = namaPelanggan;
-                    lastName = "";
-                }
-
-                if (daftarPelanggan.containsKey(idPelanggan)) {
-                    System.out.println("CREATE PELANGGAN: " + idPelanggan + " IS EXISTS");
-                    return;
-                }
-
-                daftarPelanggan.put(idPelanggan, new Pelanggan(idPelanggan, firstName, lastName, tanggalMenjadiMember,
-                        Integer.parseInt(saldoAwal)));
-                output.printf("%-5s %c %-25s %c %-10s %c %s\n", idPelanggan, '|', namaPelanggan, '|',
-                        tanggalMenjadiMember, '|', saldoAwal);
-                System.out.println("CREATE PELANGGAN SUCCESS: " + idPelanggan);
-            }
-        }
-    }
-
-    public void loadPelanggan() throws Exception {
+    @Override
+    public void loadPelanggan() throws Exception{
         File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt");
         Scanner in = new Scanner(file);
 
@@ -151,18 +177,9 @@ public class Admin {
         }
     }
 
-    public void readPelanggan(String input) throws Exception {
-        if (input.startsWith("READ PELANGGAN")) {
-            loadPelanggan();
-
-            System.out.println("=".repeat(58));
-            System.out.println(" ".repeat(21) + "Daftar Pelanggan");
-            System.out.println("=".repeat(58));
-
-            for (Pelanggan pelanggan : daftarPelanggan.values()) {
-                System.out.printf("%-11s %-24s %-14s %d\n", pelanggan.getIdPelanggan(), pelanggan.getFullName(),
-                        pelanggan.getTanggalMenjadiMember(), pelanggan.getSaldoAwal());
-            }
-        }
+    @Override
+    public void loadCart() throws Exception {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'loadCart'");
     }
 }
