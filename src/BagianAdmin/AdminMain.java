@@ -6,17 +6,17 @@ public class AdminMain {
     public static void main(String[] args) throws Exception {
         Admin admin = new Admin();
         Scanner in = new Scanner(System.in);
-        while(true){
+        while (true) {
             String input = in.nextLine();
-            if (input.startsWith("CREATE MENU")) {
+            if (input.startsWith("CREATE MENU"))
                 admin.createMenu(input);
-            } else if (input.startsWith("READ MENU")){
+            else if (input.startsWith("READ MENU"))
                 admin.readMenu(input);
-            } else if (input.startsWith("READ PELANGGAN")){
+            else if (input.startsWith("READ PELANGGAN"))
                 admin.readPelanggan(input);
-            } else if(input.startsWith("CREATE PELANGGAN")){
+            else if (input.startsWith("CREATE PELANGGAN"))
                 admin.createPelanggan(input);
-            } else{
+            else {
                 in.close();
                 break;
             }

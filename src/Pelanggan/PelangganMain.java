@@ -6,20 +6,18 @@ import BagianAdmin.Admin;
 import Order.Order;
 
 public class PelangganMain {
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         Admin admin = new Admin();
-        Pelanggan pelanggan = new Pelanggan();
         Order order = new Order();
         Scanner in = new Scanner(System.in);
-        while(true){
+        while (true) {
             String input = in.nextLine();
-            if (input.startsWith("READ MENU")){
+            if (input.startsWith("READ MENU"))
                 admin.readMenu(input);
-            } else if(input.startsWith("ADD_TO_CART")){
-                pelanggan.makeOrder(input);
-            } else if(input.startsWith("PRINT")){
+            else if (input.startsWith("ADD_TO_CART"))
+                order.makeOrder(input);
+            else if (input.startsWith("PRINT"))
                 order.printDetails(input);
-            } 
         }
-    }   
+    }
 }
