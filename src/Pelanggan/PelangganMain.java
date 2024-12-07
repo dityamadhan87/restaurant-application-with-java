@@ -18,6 +18,7 @@ public class PelangganMain {
                 order.makeOrder(input);
             else if (input.startsWith("PRINT"))
                 order.printDetails(input);
+            else if(input.startsWith("REMOVE_FROM_CART"));
         }
     }
 }

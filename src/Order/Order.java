@@ -1,11 +1,17 @@
 package Order;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Scanner;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.LinkedList;
 
 import InterfaceRestaurant.ReadData;
 import Menu.Menu;
@@ -15,9 +21,9 @@ public class Order implements ReadData {
     private Menu menu;
     private int kuantitas;
     private int subTotalBiayaMakanan;
-    private HashMap<Pelanggan, LinkedList<Order>> cart = new HashMap<>();
-    private HashMap<String, Menu> daftarMenu = new HashMap<>();
-    private HashMap<String, Pelanggan> daftarPelanggan = new HashMap<>();
+    private Map<Pelanggan, Set<Order>> cart = new LinkedHashMap<>();
+    private Set<Menu> daftarMenu = new LinkedHashSet<>();
+    private Set<Pelanggan> daftarPelanggan = new LinkedHashSet<>();
 
     public Order(Menu menu, int kuantitas) {
         this.menu = menu;
@@ -35,6 +41,10 @@ public class Order implements ReadData {
         return kuantitas;
     }
 
+    public Map<Pelanggan, Set<Order>> getCart() {
+        return cart;
+    }
+
     public int getSubTotalBiayaMakanan() {
         subTotalBiayaMakanan = kuantitas * Integer.parseInt(menu.getHargaMenu());
         return subTotalBiayaMakanan;
@@ -43,65 +53,110 @@ public class Order implements ReadData {
     public void makeOrder(String input) throws Exception {
         loadCart();
 
-        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt";
-        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
-            if (input.startsWith("ADD_TO_CART")) {
-                String[] bagianPesanan = input.split(" ", 2);
-                String dataPesanan = bagianPesanan[1];
-                String[] unitDataPesanan = dataPesanan.split(" ");
-                String idPelanggan = unitDataPesanan[0];
-                String idMenu = unitDataPesanan[1];
-                String kuantitas = unitDataPesanan[2];
+        String[] bagianPesanan = input.split(" ", 2);
+        String dataPesanan = bagianPesanan[1];
+        String[] unitDataPesanan = dataPesanan.split(" ");
+        String idPelanggan = unitDataPesanan[0];
+        String idMenu = unitDataPesanan[1];
+        String kuantitas = unitDataPesanan[2];
 
-                if (!daftarPelanggan.containsKey(idPelanggan)
-                        || !daftarMenu.containsKey(idMenu)) {
-                    System.out.println("ADD_TO_CART FAILED: NON EXISTENT CUSTOMER OR MENU");
-                    return;
-                }
-                Pelanggan pelanggan = daftarPelanggan.get(idPelanggan);
-                Menu menu = daftarMenu.get(idMenu);
-                Order order = new Order(menu, Integer.parseInt(kuantitas));
+        Pelanggan pelangganOrder = new Pelanggan(idPelanggan);
+        Menu menuOrder = new Menu(idMenu);
 
-                cart.computeIfAbsent(pelanggan, _ -> new LinkedList<>()).add(order);
+        if (!daftarPelanggan.contains(pelangganOrder)
+                || !daftarMenu.contains(menuOrder)) {
+            System.out.println("ADD_TO_CART FAILED: NON EXISTENT CUSTOMER OR MENU");
+            return;
+        }
 
-                output.printf("%-4s %-1c %-4s %c %s\n", idPelanggan, '|', idMenu, '|',
-                        kuantitas);
-                System.out.println(
-                        "ADD_TO_CART SUCCESS: " + kuantitas + " " + order.getMenu().getNamaMenu() + " IS ADDED");
+        for(Pelanggan pelanggan : daftarPelanggan){
+            if(pelanggan.getIdPelanggan().equals(idPelanggan)){
+                pelangganOrder = pelanggan;
+                break;
             }
         }
+
+        for(Menu menu : daftarMenu){
+            if(menu.getIdMenu().equals(idMenu)){
+                menuOrder = menu;
+                break;
+            }
+        }
+        
+        Order order = new Order(menuOrder, Integer.parseInt(kuantitas));
+
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt";
+        File file = new File(filePath);
+        List<String> lines = new LinkedList<>();
+        boolean isUpdated = false;
+
+        if (file.length() > 0) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] columns = line.split("\\|");
+                    String idPelangganFile = columns[0].trim();
+                    String idMenuFile = columns[1].trim();
+                    String kuantitasFile = columns[2].trim();
+                    int totalKuantitas = Integer.parseInt(kuantitasFile) + Integer.parseInt(kuantitas);
+
+                    if (idPelangganFile.equals(idPelanggan) && idMenuFile.equals(idMenu)) {
+                        line = String.format("%-4s %-1c %-4s %c %d", idPelanggan, '|', idMenu, '|',
+                                totalKuantitas);
+                        isUpdated = true;
+                        System.out.println("ADD_TO_CART SUCCESS: " + totalKuantitas + " " + menuOrder.getNamaMenu()
+                                + " QUANTITY IS INCREMENTED");
+                    }
+                    lines.add(line);
+                }
+            }
+        }
+
+        if (!isUpdated) {
+            lines.add(String.format("%-4s %-1c %-4s %c %s", idPelanggan, '|', idMenu, '|', kuantitas));
+            System.out.println(
+                    "ADD_TO_CART SUCCESS: " + kuantitas + " " + order.getMenu().getNamaMenu() + " IS ADDED");
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
+            }
+        }
+        cart.computeIfAbsent(pelangganOrder, _ -> new LinkedHashSet<>()).add(order);
     }
 
     public void printDetails(String input) throws Exception {
         loadCart();
 
-        if (input.startsWith("PRINT")) {
-            String[] bagianPrint = input.split(" ", 2);
-            String idPelanggan = bagianPrint[1];
-            int i = 1;
-            boolean cekIdPelanggan = true;
-            int total = 0;
-            for (Pelanggan pelanggan : cart.keySet()) {
-                if (pelanggan.getIdPelanggan().equals(idPelanggan)) {
-                    if (cekIdPelanggan) {
-                        System.out.println("Kode Pelanggan: " + pelanggan.getIdPelanggan());
-                        System.out.println("Nama: " + pelanggan.getFullName());
-                        System.out.printf("%3s | %-20s | %3s | %8s \n", "No", "Menu", "Qty", "Subtotal");
-                        System.out.print("=".repeat(50) + "\n");
-                        cekIdPelanggan = false;
-                    }
-                    for (Order order : cart.get(pelanggan)) {
-                        System.out.printf("%c %-3d %-23s %-5d %d\n", ' ',
-                                i++, order.getMenu().getNamaMenu(), order.getKuantitas(),
-                                order.getSubTotalBiayaMakanan());
-                        total += order.getSubTotalBiayaMakanan();
-                    }
+        String[] bagianPrint = input.split(" ", 2);
+        String idPelanggan = bagianPrint[1];
+        boolean cekIdPelanggan = true;
+        for (Pelanggan pelanggan : cart.keySet()) {
+            if (pelanggan.getIdPelanggan().equals(idPelanggan)) {
+                if (cekIdPelanggan) {
+                    System.out.println("Kode Pelanggan: " + pelanggan.getIdPelanggan());
+                    System.out.println("Nama: " + pelanggan.getFullName());
+                    System.out.printf("%3s | %-20s | %3s | %8s \n", "No", "Menu", "Qty", "Subtotal");
                     System.out.print("=".repeat(50) + "\n");
-                    System.out.printf("%-26s %-8c %d\n", "Total", ':', total);
+                    cekIdPelanggan = false;
                 }
+                int i = 1;
+                int total = 0;
+                for (Order order : cart.get(pelanggan)) {
+                    System.out.printf("%c %-3d %-23s %-5d %d\n", ' ',
+                            i++, order.getMenu().getNamaMenu(), order.getKuantitas(),
+                            order.getSubTotalBiayaMakanan());
+                    total += order.getSubTotalBiayaMakanan();
+                }
+                System.out.print("=".repeat(50) + "\n");
+                System.out.printf("%-26s %-8c %d\n", "Total", ':', total);
+                break;
             }
         }
     }
+    
     @Override
     public void loadCart() throws Exception {
         if (daftarMenu.isEmpty()) 
@@ -122,11 +177,24 @@ public class Order implements ReadData {
             String idMenu = columns[1].trim();
             String kuantitas = columns[2].trim();
 
-            Pelanggan pelanggan = daftarPelanggan.get(idPelanggan);
-            Menu menu = daftarMenu.get(idMenu);
-            Order order = new Order(menu, Integer.parseInt(kuantitas));
+            Pelanggan pelangganCart = new Pelanggan(idPelanggan);
+            for(Pelanggan pelanggan : daftarPelanggan){
+                if(pelanggan.getIdPelanggan().equals(idPelanggan)){
+                    pelangganCart = pelanggan;
+                    break;
+                }
+            }
 
-            cart.computeIfAbsent(pelanggan, _ -> new LinkedList<>()).add(order);
+            Menu menuCart = new Menu(idMenu);
+            for(Menu menu : daftarMenu){
+                if(menu.getIdMenu().equals(idMenu)){
+                    menuCart = menu;
+                    break;
+                }
+            }
+
+            Order order = new Order(menuCart, Integer.parseInt(kuantitas));
+            cart.computeIfAbsent(pelangganCart, _ -> new LinkedHashSet<>()).add(order);
         }
     }
 
@@ -143,10 +211,12 @@ public class Order implements ReadData {
             String namaMenu = columns[1].trim();
             String hargaMenu = columns[2].trim();
 
-            if (daftarMenu.containsKey(idMenu))
+            Menu menu = new Menu(idMenu, namaMenu, hargaMenu);
+
+            if (daftarMenu.contains(menu))
                 return;
 
-            daftarMenu.put(idMenu, new Menu(idMenu, namaMenu, hargaMenu));
+            daftarMenu.add(menu);
         }
     }
 
@@ -175,11 +245,12 @@ public class Order implements ReadData {
                 lastName = "";
             }
 
-            if (daftarPelanggan.containsKey(idPelanggan))
+            Pelanggan pelanggan = new Pelanggan(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
+
+            if (daftarPelanggan.contains(pelanggan))
                 return;
 
-            daftarPelanggan.put(idPelanggan,
-                    new Pelanggan(idPelanggan, firstName, lastName, tanggalMenjadiMember, Integer.parseInt(saldoAwal)));
+            daftarPelanggan.add(pelanggan);
         }
     }
 }
