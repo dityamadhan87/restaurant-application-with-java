@@ -69,20 +69,13 @@ public class Order implements ReadData {
             return;
         }
 
-        for(Pelanggan pelanggan : daftarPelanggan){
-            if(pelanggan.getIdPelanggan().equals(idPelanggan)){
-                pelangganOrder = pelanggan;
-                break;
-            }
-        }
-
-        for(Menu menu : daftarMenu){
-            if(menu.getIdMenu().equals(idMenu)){
+        for (Menu menu : daftarMenu) {
+            if (menu.getIdMenu().equals(idMenu)) {
                 menuOrder = menu;
                 break;
             }
         }
-        
+
         Order order = new Order(menuOrder, Integer.parseInt(kuantitas));
 
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt";
@@ -127,6 +120,73 @@ public class Order implements ReadData {
         cart.computeIfAbsent(pelangganOrder, _ -> new LinkedHashSet<>()).add(order);
     }
 
+    public void removeFromCart(String input) throws Exception {
+        loadCart();
+
+        String[] bagianPesanan = input.split(" ", 2);
+        String dataPesanan = bagianPesanan[1];
+        String[] unitDataPesanan = dataPesanan.split(" ");
+        String idPelanggan = unitDataPesanan[0];
+        String idMenu = unitDataPesanan[1];
+        String kuantitas = unitDataPesanan[2];
+
+        Pelanggan pelangganOrder = new Pelanggan(idPelanggan);
+        Menu menuOrder = new Menu(idMenu);
+        Order order = new Order(menuOrder, Integer.parseInt(kuantitas));
+
+        if (!cart.containsKey(pelangganOrder)) {
+            System.out.println("REMOVE FROM CART FAILED: CUSTOMERS HAVE NOT ORDERED");
+            return;
+        }
+        if (!cart.get(pelangganOrder).contains(order)) {
+            System.out.println("REMOVE FROM CART FAILED: CUSTOMERS HAVE NOT ORDERED THIS MENU");
+            return;
+        }
+
+        for (Menu menu : daftarMenu) {
+            if (menu.getIdMenu().equals(idMenu)) {
+                menuOrder = menu;
+                break;
+            }
+        }
+
+        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt");
+        Scanner in = new Scanner(file);
+        List<String> lines = new LinkedList<>();
+
+        while (in.hasNextLine()) {
+            String line = in.nextLine();
+            if (line.isEmpty())
+                continue;
+
+            String[] columns = line.split("\\|");
+            String idPelangganFile = columns[0].trim();
+            String idMenuFile = columns[1].trim();
+            String kuantitasFile = columns[2].trim();
+            int totalKuantitas = Integer.parseInt(kuantitasFile) - Integer.parseInt(kuantitas);
+            if (idPelangganFile.equals(idPelanggan) && idMenuFile.equals(idMenu)) {
+                if (totalKuantitas <= 0) {
+                    System.out.println("REMOVE FROM CART: " + menuOrder.getNamaMenu() + " IS REMOVED");
+                    continue;
+                }
+                line = String.format("%-4s %-1c %-4s %c %d", idPelanggan, '|', idMenu, '|',
+                        totalKuantitas);
+                System.out.println("REMOVE_FROM_CART SUCCESS: " + menuOrder.getNamaMenu()
+                        + " QUANTITY IS DECREMENTED");
+            }
+            lines.add(line);
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
+            }
+        }
+        cart.clear();
+        loadCart();
+    }
+
     public void printDetails(String input) throws Exception {
         loadCart();
 
@@ -156,13 +216,13 @@ public class Order implements ReadData {
             }
         }
     }
-    
+
     @Override
     public void loadCart() throws Exception {
-        if (daftarMenu.isEmpty()) 
+        if (daftarMenu.isEmpty())
             loadMenu();
 
-        if (daftarPelanggan.isEmpty()) 
+        if (daftarPelanggan.isEmpty())
             loadPelanggan();
 
         cart.clear();
@@ -171,6 +231,9 @@ public class Order implements ReadData {
 
         while (in.hasNextLine()) {
             String line = in.nextLine();
+            if (line.isEmpty())
+                continue;
+
             String[] columns = line.split("\\|");
 
             String idPelanggan = columns[0].trim();
@@ -178,16 +241,16 @@ public class Order implements ReadData {
             String kuantitas = columns[2].trim();
 
             Pelanggan pelangganCart = new Pelanggan(idPelanggan);
-            for(Pelanggan pelanggan : daftarPelanggan){
-                if(pelanggan.getIdPelanggan().equals(idPelanggan)){
+            for (Pelanggan pelanggan : daftarPelanggan) {
+                if (pelanggan.getIdPelanggan().equals(idPelanggan)) {
                     pelangganCart = pelanggan;
                     break;
                 }
             }
 
             Menu menuCart = new Menu(idMenu);
-            for(Menu menu : daftarMenu){
-                if(menu.getIdMenu().equals(idMenu)){
+            for (Menu menu : daftarMenu) {
+                if (menu.getIdMenu().equals(idMenu)) {
                     menuCart = menu;
                     break;
                 }
@@ -205,6 +268,9 @@ public class Order implements ReadData {
 
         while (in.hasNextLine()) {
             String line = in.nextLine();
+            if (line.isEmpty())
+                continue;
+
             String[] columns = line.split("\\|");
 
             String idMenu = columns[0].trim();
@@ -227,6 +293,9 @@ public class Order implements ReadData {
 
         while (in.hasNextLine()) {
             String line = in.nextLine();
+            if (line.isEmpty())
+                continue;
+
             String[] columns = line.split("\\|");
 
             String idPelanggan = columns[0].trim();
@@ -252,5 +321,30 @@ public class Order implements ReadData {
 
             daftarPelanggan.add(pelanggan);
         }
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((menu == null) ? 0 : menu.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Order other = (Order) obj;
+        if (menu == null) {
+            if (other.menu != null)
+                return false;
+        } else if (!menu.equals(other.menu))
+            return false;
+        return true;
     }
 }

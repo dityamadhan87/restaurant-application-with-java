@@ -2,4 +2,3 @@ GT001 | Raditya Rahmadhani        | -          | 30000
 GT002 | Haikal Gibran             | -          | 20000
 MEM001 | Ayu Nadhiroh              | 2024/10/21 | 40000
 MEM002 | Fikri Iqbal               | 2024/08/01 | 40000
-MEM003 | Bagus Setiawan            | 2023/04/03 | 70000

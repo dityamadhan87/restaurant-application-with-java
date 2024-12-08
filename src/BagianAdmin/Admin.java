@@ -121,6 +121,9 @@ public class Admin implements ReadData {
 
         while (in.hasNextLine()) {
             String line = in.nextLine();
+            if (line.isEmpty())
+                continue;
+            
             String[] columns = line.split("\\|");
 
             String idMenu = columns[0].trim();
@@ -143,6 +146,9 @@ public class Admin implements ReadData {
 
         while (in.hasNextLine()) {
             String line = in.nextLine();
+            if (line.isEmpty())
+                continue;
+            
             String[] columns = line.split("\\|");
 
             String idPelanggan = columns[0].trim();
