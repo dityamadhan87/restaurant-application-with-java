@@ -1,23 +1,34 @@
 package Pelanggan;
 
-public class Pelanggan {
+import java.time.Period;
+
+public abstract class Pelanggan {
+    String tipePelanggan;
     private String idPelanggan;
     private String firstName;
     private String lastName;
-    private String tanggalMenjadiMember;
     private String saldoAwal;
+    String tanggalMenjadiMember;
 
-    public Pelanggan(String idPelanggan, String firstName, String lastName, String tanggalMenjadiMember,
+    public Pelanggan(String idPelanggan, String firstName, String lastName,
             String saldoAwal) {
+        this.tipePelanggan = "-";
         this.idPelanggan = idPelanggan;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.tanggalMenjadiMember = tanggalMenjadiMember;
         this.saldoAwal = saldoAwal;
+        this.tanggalMenjadiMember = "-";
     }
 
     public Pelanggan(String idPelanggan){
         this.idPelanggan = idPelanggan;
+    
+    }
+    public Pelanggan(){
+    }
+
+    public String getTipePelanggan() {
+        return tipePelanggan;
     }
 
     public String getIdPelanggan() {
@@ -36,13 +47,19 @@ public class Pelanggan {
         return firstName + " " + lastName;
     }
 
+    public String getSaldoAwal() {
+        return saldoAwal;
+    }
+
     public String getTanggalMenjadiMember() {
         return tanggalMenjadiMember;
     }
 
-    public String getSaldoAwal() {
-        return saldoAwal;
+    public void setSaldoAwal(String saldoAwal) {
+        this.saldoAwal = saldoAwal;
     }
+
+    public abstract Period lamaMenjadiMember();
 
     @Override
     public int hashCode() {
@@ -56,16 +73,9 @@ public class Pelanggan {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
+        if (obj == null || !(obj instanceof Pelanggan))
             return false;
         Pelanggan other = (Pelanggan) obj;
-        if (idPelanggan == null) {
-            if (other.idPelanggan != null)
-                return false;
-        } else if (!idPelanggan.equals(other.idPelanggan))
-            return false;
-        return true;
+        return idPelanggan != null && idPelanggan.equals(other.idPelanggan);
     }
 }

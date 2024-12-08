@@ -1,4 +1,6 @@
-GT001 | Raditya Rahmadhani        | -          | 30000
-GT002 | Haikal Gibran             | -          | 20000
-MEM001 | Ayu Nadhiroh              | 2024/10/21 | 40000
-MEM002 | Fikri Iqbal               | 2024/08/01 | 40000
+GUEST  | A001    | Raditya Rahmadhani        | -          | 70000
+GUEST  | A002    | Haikal Gibran             | -          | 60000
+MEMBER | A003    | Ayu Nadhiroh              | 2024/10/21 | 80000
+MEMBER | A004    | Fikri Iqbal               | 2024/08/01 | 50000
+MEMBER | A005    | Bagus Setiawan            | 2023/04/03 | 71000
+GUEST  | A006    | Niken                     | -          | 180000

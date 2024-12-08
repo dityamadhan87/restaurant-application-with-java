@@ -20,6 +20,8 @@ public class PelangganMain {
                 order.printDetails(input);
             else if(input.startsWith("REMOVE_FROM_CART"))
                 order.removeFromCart(input);
+            else if(input.startsWith("TOPUP"))
+                admin.topupSaldoPelanggan(input);
         }
     }
 }

@@ -15,7 +15,7 @@ import java.util.LinkedList;
 
 import InterfaceRestaurant.ReadData;
 import Menu.Menu;
-import Pelanggan.Pelanggan;
+import Pelanggan.*;
 
 public class Order implements ReadData {
     private Menu menu;
@@ -60,13 +60,20 @@ public class Order implements ReadData {
         String idMenu = unitDataPesanan[1];
         String kuantitas = unitDataPesanan[2];
 
-        Pelanggan pelangganOrder = new Pelanggan(idPelanggan);
+        Pelanggan pelangganOrder = new Guest(idPelanggan);
         Menu menuOrder = new Menu(idMenu);
 
         if (!daftarPelanggan.contains(pelangganOrder)
                 || !daftarMenu.contains(menuOrder)) {
             System.out.println("ADD_TO_CART FAILED: NON EXISTENT CUSTOMER OR MENU");
             return;
+        }
+
+        for (Pelanggan getPelanggan : daftarPelanggan) {
+            if (getPelanggan.getIdPelanggan().equals(idPelanggan)) {
+                pelangganOrder = getPelanggan;
+                break;
+            }
         }
 
         for (Menu menu : daftarMenu) {
@@ -88,13 +95,13 @@ public class Order implements ReadData {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     String[] columns = line.split("\\|");
-                    String idPelangganFile = columns[0].trim();
-                    String idMenuFile = columns[1].trim();
-                    String kuantitasFile = columns[2].trim();
+                    String idPelangganFile = columns[1].trim();
+                    String idMenuFile = columns[2].trim();
+                    String kuantitasFile = columns[3].trim();
                     int totalKuantitas = Integer.parseInt(kuantitasFile) + Integer.parseInt(kuantitas);
 
                     if (idPelangganFile.equals(idPelanggan) && idMenuFile.equals(idMenu)) {
-                        line = String.format("%-4s %-1c %-4s %c %d", idPelanggan, '|', idMenu, '|',
+                        line = String.format("%-6s %c %-7s %c %-5s %c %d",pelangganOrder.getTipePelanggan(),'|', idPelanggan, '|', idMenu, '|',
                                 totalKuantitas);
                         isUpdated = true;
                         System.out.println("ADD_TO_CART SUCCESS: " + totalKuantitas + " " + menuOrder.getNamaMenu()
@@ -106,7 +113,7 @@ public class Order implements ReadData {
         }
 
         if (!isUpdated) {
-            lines.add(String.format("%-4s %-1c %-4s %c %s", idPelanggan, '|', idMenu, '|', kuantitas));
+            lines.add(String.format("%-6s %c %-7s %c %-5s %c %s",pelangganOrder.getTipePelanggan(),'|' ,idPelanggan, '|', idMenu, '|', kuantitas));
             System.out.println(
                     "ADD_TO_CART SUCCESS: " + kuantitas + " " + order.getMenu().getNamaMenu() + " IS ADDED");
         }
@@ -130,7 +137,7 @@ public class Order implements ReadData {
         String idMenu = unitDataPesanan[1];
         String kuantitas = unitDataPesanan[2];
 
-        Pelanggan pelangganOrder = new Pelanggan(idPelanggan);
+        Pelanggan pelangganOrder = new Guest(idPelanggan);
         Menu menuOrder = new Menu(idMenu);
         Order order = new Order(menuOrder, Integer.parseInt(kuantitas));
 
@@ -141,6 +148,13 @@ public class Order implements ReadData {
         if (!cart.get(pelangganOrder).contains(order)) {
             System.out.println("REMOVE FROM CART FAILED: CUSTOMERS HAVE NOT ORDERED THIS MENU");
             return;
+        }
+
+        for (Pelanggan getPelanggan : daftarPelanggan) {
+            if (getPelanggan.getIdPelanggan().equals(idPelanggan)) {
+                pelangganOrder = getPelanggan;
+                break;
+            }
         }
 
         for (Menu menu : daftarMenu) {
@@ -160,17 +174,17 @@ public class Order implements ReadData {
                 continue;
 
             String[] columns = line.split("\\|");
-            String idPelangganFile = columns[0].trim();
-            String idMenuFile = columns[1].trim();
-            String kuantitasFile = columns[2].trim();
+            String idPelangganFile = columns[1].trim();
+            String idMenuFile = columns[2].trim();
+            String kuantitasFile = columns[3].trim();
             int totalKuantitas = Integer.parseInt(kuantitasFile) - Integer.parseInt(kuantitas);
             if (idPelangganFile.equals(idPelanggan) && idMenuFile.equals(idMenu)) {
                 if (totalKuantitas <= 0) {
                     System.out.println("REMOVE FROM CART: " + menuOrder.getNamaMenu() + " IS REMOVED");
                     continue;
                 }
-                line = String.format("%-4s %-1c %-4s %c %d", idPelanggan, '|', idMenu, '|',
-                        totalKuantitas);
+                line = String.format("%-6s %c %-7s %c %-5s %c %d",pelangganOrder.getTipePelanggan(),'|', idPelanggan, '|', idMenu, '|',
+                totalKuantitas);
                 System.out.println("REMOVE_FROM_CART SUCCESS: " + menuOrder.getNamaMenu()
                         + " QUANTITY IS DECREMENTED");
             }
@@ -236,11 +250,11 @@ public class Order implements ReadData {
 
             String[] columns = line.split("\\|");
 
-            String idPelanggan = columns[0].trim();
-            String idMenu = columns[1].trim();
-            String kuantitas = columns[2].trim();
+            String idPelanggan = columns[1].trim();
+            String idMenu = columns[2].trim();
+            String kuantitas = columns[3].trim();
 
-            Pelanggan pelangganCart = new Pelanggan(idPelanggan);
+            Pelanggan pelangganCart = new Guest(idPelanggan);
             for (Pelanggan pelanggan : daftarPelanggan) {
                 if (pelanggan.getIdPelanggan().equals(idPelanggan)) {
                     pelangganCart = pelanggan;
@@ -295,13 +309,14 @@ public class Order implements ReadData {
             String line = in.nextLine();
             if (line.isEmpty())
                 continue;
-
+            
             String[] columns = line.split("\\|");
 
-            String idPelanggan = columns[0].trim();
-            String namaPelanggan = columns[1].trim();
-            String tanggalMenjadiMember = columns[2].trim();
-            String saldoAwal = columns[3].trim();
+            String tipePelanggan = columns[0].trim();
+            String idPelanggan = columns[1].trim();
+            String namaPelanggan = columns[2].trim();
+            String tanggalMenjadiMember = columns[3].trim();
+            String saldoAwal = columns[4].trim();
 
             String firstName;
             String lastName;
@@ -314,7 +329,12 @@ public class Order implements ReadData {
                 lastName = "";
             }
 
-            Pelanggan pelanggan = new Pelanggan(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
+            Pelanggan pelanggan;
+
+            if (tipePelanggan.equals("GUEST")) 
+                pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
+            else
+                pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
 
             if (daftarPelanggan.contains(pelanggan))
                 return;

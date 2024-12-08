@@ -1,15 +1,20 @@
 package BagianAdmin;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Scanner;
-import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.LinkedList;
 
 import InterfaceRestaurant.ReadData;
 import Menu.Menu;
-import Pelanggan.Pelanggan;
+import Pelanggan.*;
 
 public class Admin implements ReadData {
 
@@ -50,7 +55,46 @@ public class Admin implements ReadData {
         }
     }
 
-    public void createPelanggan(String input) throws Exception {
+    public void createGuest(String input) throws Exception {
+        if (daftarPelanggan.isEmpty())
+            loadPelanggan();
+
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
+        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
+            String[] bagianPelanggan = input.split(" ", 3);
+            String dataPelanggan = bagianPelanggan[2];
+            String[] unitDataPelanggan = dataPelanggan.split("\\|");
+            String idPelanggan = unitDataPelanggan[0].trim();
+            String namaPelanggan = unitDataPelanggan[1].trim();
+            String saldoAwal = unitDataPelanggan[2].trim();
+
+            String firstName;
+            String lastName;
+
+            if (namaPelanggan.contains(" ")) {
+                firstName = namaPelanggan.substring(0, namaPelanggan.indexOf(' '));
+                lastName = namaPelanggan.substring(namaPelanggan.indexOf(' ') + 1);
+            } else {
+                firstName = namaPelanggan;
+                lastName = "";
+            }
+
+            Pelanggan pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
+
+            if (daftarPelanggan.contains(pelanggan)) {
+                System.out.println("CREATE GUEST FAILED: " + idPelanggan + " IS EXISTS");
+                return;
+            }
+
+            daftarPelanggan.add(pelanggan);
+            output.printf("%-6s %c %-7s %c %-25s %c %-10s %c %s\n", pelanggan.getTipePelanggan(), '|', idPelanggan, '|',
+                    namaPelanggan, '|',
+                    pelanggan.getTanggalMenjadiMember(), '|', saldoAwal);
+            System.out.println("CREATE GUEST SUCCESS: " + idPelanggan);
+        }
+    }
+
+    public void createMember(String input) throws Exception {
         if (daftarPelanggan.isEmpty())
             loadPelanggan();
 
@@ -75,18 +119,71 @@ public class Admin implements ReadData {
                 lastName = "";
             }
 
-            Pelanggan pelanggan = new Pelanggan(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
+            Pelanggan pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
 
             if (daftarPelanggan.contains(pelanggan)) {
-                System.out.println("CREATE PELANGGAN FAILED: " + idPelanggan + " IS EXISTS");
+                System.out.println("CREATE MEMBER FAILED: " + idPelanggan + " IS EXISTS");
                 return;
             }
 
             daftarPelanggan.add(pelanggan);
-            output.printf("%-5s %c %-25s %c %-10s %c %s\n", idPelanggan, '|', namaPelanggan, '|',
+            output.printf("%-6s %c %-7s %c %-25s %c %-10s %c %s\n", pelanggan.getTipePelanggan(),'|',idPelanggan, '|', namaPelanggan, '|',
                     tanggalMenjadiMember, '|', saldoAwal);
-            System.out.println("CREATE PELANGGAN SUCCESS: " + idPelanggan);
+            System.out.println("CREATE MEMBER SUCCESS: " + idPelanggan + " " + pelanggan.getFullName());
         }
+    }
+
+    public void topupSaldoPelanggan(String input) throws Exception {
+        loadPelanggan();
+        String[] bagianPelanggan = input.split(" ", 2);
+        String pelangganTopup = bagianPelanggan[1];
+        String[] unitTopup = pelangganTopup.split(" ");
+        String idPelanggan = unitTopup[0].trim();
+        String saldoTopup = unitTopup[1].trim();
+        Pelanggan pelanggan = new Guest(idPelanggan);
+        if (!daftarPelanggan.contains(pelanggan)) {
+            System.out.println("TOPUP FAILED: NON EXISTENT CUSTOMER");
+            return;
+        }
+        for (Pelanggan getPelanggan : daftarPelanggan) {
+            if (getPelanggan.getIdPelanggan().equals(idPelanggan)) {
+                pelanggan = getPelanggan;
+                break;
+            }
+        }
+
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
+        File file = new File(filePath);
+        List<String> lines = new LinkedList<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] columns = line.split("\\|");
+                String idPelangganFile = columns[1].trim();
+                String saldoFile = columns[4].trim();
+                int saldoAkhir = Integer.parseInt(saldoTopup) + Integer.parseInt(saldoFile);
+
+                if (idPelangganFile.equals(idPelanggan)) {
+                    line = String.format("%-6s %c %-7s %c %-25s %c %-10s %c %d", pelanggan.getTipePelanggan(),'|',idPelanggan, '|', pelanggan.getFullName(), '|',
+                            pelanggan.getTanggalMenjadiMember(), '|', saldoAkhir);
+                    System.out
+                            .println("TOPUP SUCCESS: " + pelanggan.getFullName() + " " + pelanggan.getSaldoAwal() + "=>"
+                                    + saldoAkhir);
+                    pelanggan.setSaldoAwal(String.valueOf(saldoAkhir));
+                }
+                lines.add(line);
+            }
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
+            }
+        }
+        daftarPelanggan.remove(pelanggan);
+        daftarPelanggan.add(pelanggan);
     }
 
     public void readMenu(String input) throws Exception {
@@ -105,12 +202,12 @@ public class Admin implements ReadData {
         if (daftarPelanggan.isEmpty())
             loadPelanggan();
 
-        System.out.println("=".repeat(58));
-        System.out.println(" ".repeat(21) + "Daftar Pelanggan");
-        System.out.println("=".repeat(58));
+        System.out.println("=".repeat(71));
+        System.out.println(" ".repeat(27) + "Daftar Pelanggan");
+        System.out.println("=".repeat(71));
 
         for (Pelanggan pelanggan : daftarPelanggan)
-            System.out.printf("%-11s %-24s %-14s %s\n", pelanggan.getIdPelanggan(), pelanggan.getFullName(),
+            System.out.printf("%-10s %-11s %-26s %-14s %s\n", pelanggan.getTipePelanggan(),pelanggan.getIdPelanggan(), pelanggan.getFullName(),
                     pelanggan.getTanggalMenjadiMember(), pelanggan.getSaldoAwal());
     }
 
@@ -151,10 +248,11 @@ public class Admin implements ReadData {
             
             String[] columns = line.split("\\|");
 
-            String idPelanggan = columns[0].trim();
-            String namaPelanggan = columns[1].trim();
-            String tanggalMenjadiMember = columns[2].trim();
-            String saldoAwal = columns[3].trim();
+            String tipePelanggan = columns[0].trim();
+            String idPelanggan = columns[1].trim();
+            String namaPelanggan = columns[2].trim();
+            String tanggalMenjadiMember = columns[3].trim();
+            String saldoAwal = columns[4].trim();
 
             String firstName;
             String lastName;
@@ -167,7 +265,12 @@ public class Admin implements ReadData {
                 lastName = "";
             }
 
-            Pelanggan pelanggan = new Pelanggan(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
+            Pelanggan pelanggan;
+
+            if (tipePelanggan.equals("GUEST")) 
+                pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
+            else
+                pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
 
             if (daftarPelanggan.contains(pelanggan))
                 return;
