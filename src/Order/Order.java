@@ -125,6 +125,12 @@ public class Order implements ReadData {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         LocalDate tanggalExpired = LocalDate.parse(promo.getEndDate(), formatter);
+        LocalDate startDate = LocalDate.parse(promo.getStartDate(), formatter);
+
+        if (startDate.isAfter(LocalDate.now())) {
+            System.out.println("APPLY_PROMO FAILED: PROMO "+promo.getKodePromo()+ " NOT YET STARTED");
+            return;
+        }
 
         if (LocalDate.now().isAfter(tanggalExpired)) {
             System.out.println("APPLY_PROMO FAILED: PROMO "+promo.getKodePromo()+ " HAS EXPIRED");
@@ -313,7 +319,7 @@ public class Order implements ReadData {
                 System.out.print("=".repeat(50) + "\n");
                 System.out.printf("%-26s %-8c %d\n", "Total", ':', total);
                 for(Pelanggan pelangganPromo : appliedPromo.keySet()){
-                    if (pelangganPromo.equals(pelanggan)) {
+                    if (pelangganPromo.equals(pelanggan) && appliedPromo.get(pelangganPromo) instanceof PercentOffPromo) {
                         Promotion promoPelanggan = appliedPromo.get(pelangganPromo);
                         double totalDiskon = promoPelanggan.totalDiscount(cart.get(pelanggan));
                         setTotalDiskon(totalDiskon);
@@ -324,8 +330,30 @@ public class Order implements ReadData {
                     break;
                 }
                 System.out.printf("%-26s %-8c %d\n", "Ongkos kirim", ':', ongkosKirim);
+                for(Pelanggan pelangganPromo : appliedPromo.keySet()){
+                    if (pelangganPromo.equals(pelanggan) && appliedPromo.get(pelangganPromo) instanceof FreeShippingPromo) {
+                        Promotion promoPelanggan = appliedPromo.get(pelangganPromo);
+                        double totalDiskon = promoPelanggan.totalPotonganOngkosKirim(cart.get(pelanggan));
+                        setTotalDiskon(totalDiskon);
+                        System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(),':',totalDiskon);
+                        break;
+                    }
+                    setTotalDiskon(0);
+                    break;
+                }
                 System.out.print("=".repeat(50) + "\n");
                 System.out.printf("%-26s %-8c %.0f\n", "Total", ':', getTotalHarga());
+                for(Pelanggan pelangganPromo : appliedPromo.keySet()){
+                    if (pelangganPromo.equals(pelanggan) && appliedPromo.get(pelangganPromo) instanceof CashbackPromo) {
+                        Promotion promoPelanggan = appliedPromo.get(pelangganPromo);
+                        double totalDiskon = promoPelanggan.totalCashback(cart.get(pelanggan));
+                        setTotalDiskon(totalDiskon);
+                        System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(),':',totalDiskon);
+                        break;
+                    }
+                    setTotalDiskon(0);
+                    break;
+                }
                 System.out.printf("%-26s %-8c %s\n", "Saldo", ':', pelanggan.getSaldoAwal());
                 break;
             }

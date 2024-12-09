@@ -6,3 +6,4 @@ MEMBER | A003    | M001  | 1
 MEMBER | A004    | M003  | 2
 MEMBER | A004    | M001  | 2
 MEMBER | A003    | M004  | 2
+MEMBER | A003    | M003  | 4
