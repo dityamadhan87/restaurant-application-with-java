@@ -1,9 +1,11 @@
 GUEST  | A001    | M001  | 1
-GUEST  | A001    | M002  | 1
+GUEST  | A001    | M002  | 3
 GUEST  | A002    | M002  | 3
 GUEST  | A002    | M001  | 2
-MEMBER | A003    | M001  | 1
-MEMBER | A004    | M003  | 2
-MEMBER | A004    | M001  | 2
-MEMBER | A003    | M004  | 2
+MEMBER | A003    | M001  | 4
 MEMBER | A003    | M003  | 4
+MEMBER | A004    | M003  | 2
+MEMBER | A004    | M001  | 1
+MEMBER | A003    | M004  | 1
+MEMBER | A006    | M003  | 5
+MEMBER | A006    | M002  | 2

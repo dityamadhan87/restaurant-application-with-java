@@ -31,7 +31,7 @@ public class Order implements ReadData {
     private Set<Menu> daftarMenu = new LinkedHashSet<>();
     private Set<Pelanggan> daftarPelanggan = new LinkedHashSet<>();
     private Set<Promotion> daftarPromo = new LinkedHashSet<>();
-    private Map<Pelanggan,Promotion> appliedPromo = new LinkedHashMap<>();
+    private Map<Pelanggan, Promotion> appliedPromo = new LinkedHashMap<>();
 
     public Order(Menu menu, int kuantitas) {
         this.menu = menu;
@@ -48,7 +48,11 @@ public class Order implements ReadData {
     public int getKuantitas() {
         return kuantitas;
     }
-    
+
+    public void setKuantitas(int kuantitas) {
+        this.kuantitas = kuantitas;
+    }
+
     public int getSubTotalBiayaMakanan() {
         subTotalBiayaMakanan = kuantitas * Integer.parseInt(menu.getHargaMenu());
         return subTotalBiayaMakanan;
@@ -62,7 +66,7 @@ public class Order implements ReadData {
         return ongkosKirim;
     }
 
-    public void setTotalDiskon(double totalDiskon){
+    public void setTotalDiskon(double totalDiskon) {
         this.totalDiskon = totalDiskon;
     }
 
@@ -75,10 +79,7 @@ public class Order implements ReadData {
         return cart;
     }
 
-    public void applyPromo(String input) throws Exception{
-        if (daftarPromo.isEmpty()) {
-            loadPromo();
-        }
+    public void applyPromo(String input) throws Exception {
         String[] promoPelanggan = input.split(" ", 2);
         String promoDiterapkan = promoPelanggan[1];
         String[] unitDataPromo = promoDiterapkan.split(" ");
@@ -110,14 +111,14 @@ public class Order implements ReadData {
         Set<Order> pesananPelanggan = cart.get(pelangganOrder);
 
         if (promo instanceof PercentOffPromo && promo instanceof CashbackPromo) {
-            if(!promo.isMinimumPriceEligible(pesananPelanggan)){
+            if (!promo.isMinimumPriceEligible(pesananPelanggan)) {
                 System.out.println("APPLY_PROMO FAILED: MINIMUM PRICE NOT MET");
                 return;
             }
         }
 
-        if(promo instanceof FreeShippingPromo){
-            if(!promo.isShippingFeeEligible(pesananPelanggan)){
+        if (promo instanceof FreeShippingPromo) {
+            if (!promo.isShippingFeeEligible(pesananPelanggan)) {
                 System.out.println("APPLY_PROMO FAILED: SHIPPING FEE NOT MET");
                 return;
             }
@@ -128,12 +129,12 @@ public class Order implements ReadData {
         LocalDate startDate = LocalDate.parse(promo.getStartDate(), formatter);
 
         if (startDate.isAfter(LocalDate.now())) {
-            System.out.println("APPLY_PROMO FAILED: PROMO "+promo.getKodePromo()+ " NOT YET STARTED");
+            System.out.println("APPLY_PROMO FAILED: PROMO " + promo.getKodePromo() + " NOT YET STARTED");
             return;
         }
 
         if (LocalDate.now().isAfter(tanggalExpired)) {
-            System.out.println("APPLY_PROMO FAILED: PROMO "+promo.getKodePromo()+ " HAS EXPIRED");
+            System.out.println("APPLY_PROMO FAILED: PROMO " + promo.getKodePromo() + " HAS EXPIRED");
             return;
         }
 
@@ -142,8 +143,6 @@ public class Order implements ReadData {
     }
 
     public void makeOrder(String input) throws Exception {
-        loadCart();
-
         String[] bagianPesanan = input.split(" ", 2);
         String dataPesanan = bagianPesanan[1];
         String[] unitDataPesanan = dataPesanan.split(" ");
@@ -189,14 +188,14 @@ public class Order implements ReadData {
                     String idPelangganFile = columns[1].trim();
                     String idMenuFile = columns[2].trim();
                     String kuantitasFile = columns[3].trim();
-                    int totalKuantitas = Integer.parseInt(kuantitasFile) + Integer.parseInt(kuantitas);
 
                     if (idPelangganFile.equals(idPelanggan) && idMenuFile.equals(idMenu)) {
-                        line = String.format("%-6s %c %-7s %c %-5s %c %d",pelangganOrder.getTipePelanggan(),'|', idPelanggan, '|', idMenu, '|',
+                        int totalKuantitas = Integer.parseInt(kuantitasFile) + Integer.parseInt(kuantitas);
+                        order.setKuantitas(totalKuantitas);
+                        line = String.format("%-6s %c %-7s %c %-5s %c %d", pelangganOrder.getTipePelanggan(), '|',
+                                idPelanggan, '|', idMenu, '|',
                                 totalKuantitas);
                         isUpdated = true;
-                        System.out.println("ADD_TO_CART SUCCESS: " + totalKuantitas + " " + menuOrder.getNamaMenu()
-                                + " QUANTITY IS INCREMENTED");
                     }
                     lines.add(line);
                 }
@@ -204,9 +203,19 @@ public class Order implements ReadData {
         }
 
         if (!isUpdated) {
-            lines.add(String.format("%-6s %c %-7s %c %-5s %c %s",pelangganOrder.getTipePelanggan(),'|' ,idPelanggan, '|', idMenu, '|', kuantitas));
+            lines.add(String.format("%-6s %c %-7s %c %-5s %c %s", pelangganOrder.getTipePelanggan(), '|', idPelanggan,
+                    '|', idMenu, '|', kuantitas));
+            cart.computeIfAbsent(pelangganOrder, _ -> new LinkedHashSet<>()).add(order);
             System.out.println(
                     "ADD_TO_CART SUCCESS: " + kuantitas + " " + order.getMenu().getNamaMenu() + " IS ADDED");
+        } else {
+            if (cart.containsKey(pelangganOrder)) {
+                Set<Order> values = cart.get(pelangganOrder);
+                values.remove(order);
+                values.add(order);
+                System.out.println("ADD_TO_CART SUCCESS: " + order.getKuantitas() + " " + menuOrder.getNamaMenu()
+                        + " QUANTITY IS INCREMENTED");
+            }
         }
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
@@ -215,12 +224,9 @@ public class Order implements ReadData {
                 writer.newLine();
             }
         }
-        cart.computeIfAbsent(pelangganOrder, _ -> new LinkedHashSet<>()).add(order);
     }
 
     public void removeFromCart(String input) throws Exception {
-        loadCart();
-
         String[] bagianPesanan = input.split(" ", 2);
         String dataPesanan = bagianPesanan[1];
         String[] unitDataPesanan = dataPesanan.split(" ");
@@ -268,14 +274,24 @@ public class Order implements ReadData {
             String idPelangganFile = columns[1].trim();
             String idMenuFile = columns[2].trim();
             String kuantitasFile = columns[3].trim();
-            int totalKuantitas = Integer.parseInt(kuantitasFile) - Integer.parseInt(kuantitas);
             if (idPelangganFile.equals(idPelanggan) && idMenuFile.equals(idMenu)) {
+                int totalKuantitas = Integer.parseInt(kuantitasFile) - Integer.parseInt(kuantitas);
                 if (totalKuantitas <= 0) {
                     System.out.println("REMOVE FROM CART: " + menuOrder.getNamaMenu() + " IS REMOVED");
+                    Set<Order> values = cart.get(pelangganOrder);
+                    values.remove(order);
                     continue;
                 }
-                line = String.format("%-6s %c %-7s %c %-5s %c %d",pelangganOrder.getTipePelanggan(),'|', idPelanggan, '|', idMenu, '|',
-                totalKuantitas);
+                line = String.format("%-6s %c %-7s %c %-5s %c %d", pelangganOrder.getTipePelanggan(), '|', idPelanggan,
+                        '|', idMenu, '|',
+                        totalKuantitas);
+                Set<Order> values = cart.get(pelangganOrder);
+                for (Order order2 : values) {
+                    if (order2.equals(order)) {
+                        order2.setKuantitas(totalKuantitas);
+                        break;
+                    }
+                }
                 System.out.println("REMOVE_FROM_CART SUCCESS: " + menuOrder.getNamaMenu()
                         + " QUANTITY IS DECREMENTED");
             }
@@ -288,13 +304,9 @@ public class Order implements ReadData {
                 writer.newLine();
             }
         }
-        cart.clear();
-        loadCart();
     }
 
     public void printDetails(String input) throws Exception {
-        loadCart();
-
         String[] bagianPrint = input.split(" ", 2);
         String idPelanggan = bagianPrint[1];
         boolean cekIdPelanggan = true;
@@ -318,42 +330,36 @@ public class Order implements ReadData {
                 setSubTotalBiayaMakanan(total);
                 System.out.print("=".repeat(50) + "\n");
                 System.out.printf("%-26s %-8c %d\n", "Total", ':', total);
-                for(Pelanggan pelangganPromo : appliedPromo.keySet()){
-                    if (pelangganPromo.equals(pelanggan) && appliedPromo.get(pelangganPromo) instanceof PercentOffPromo) {
-                        Promotion promoPelanggan = appliedPromo.get(pelangganPromo);
-                        double totalDiskon = promoPelanggan.totalDiscount(cart.get(pelanggan));
-                        setTotalDiskon(totalDiskon);
-                        System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(),':',totalDiskon);
-                        break;
-                    }
-                    setTotalDiskon(0);
-                    break;
+
+                if (appliedPromo.containsKey(pelanggan) && appliedPromo.get(pelanggan) instanceof PercentOffPromo) {
+                    Promotion promoPelanggan = appliedPromo.get(pelanggan);
+                    double totalDiskon = promoPelanggan.totalDiscount(cart.get(pelanggan));
+                    setTotalDiskon(totalDiskon);
+                    System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(), ':',
+                            totalDiskon);
                 }
+
                 System.out.printf("%-26s %-8c %d\n", "Ongkos kirim", ':', ongkosKirim);
-                for(Pelanggan pelangganPromo : appliedPromo.keySet()){
-                    if (pelangganPromo.equals(pelanggan) && appliedPromo.get(pelangganPromo) instanceof FreeShippingPromo) {
-                        Promotion promoPelanggan = appliedPromo.get(pelangganPromo);
-                        double totalDiskon = promoPelanggan.totalPotonganOngkosKirim(cart.get(pelanggan));
-                        setTotalDiskon(totalDiskon);
-                        System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(),':',totalDiskon);
-                        break;
-                    }
-                    setTotalDiskon(0);
-                    break;
+
+                if (appliedPromo.containsKey(pelanggan) && appliedPromo.get(pelanggan) instanceof FreeShippingPromo) {
+                    Promotion promoPelanggan = appliedPromo.get(pelanggan);
+                    double totalDiskon = promoPelanggan.totalPotonganOngkosKirim(cart.get(pelanggan));
+                    setTotalDiskon(totalDiskon);
+                    System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(), ':',
+                            totalDiskon);
                 }
+
                 System.out.print("=".repeat(50) + "\n");
                 System.out.printf("%-26s %-8c %.0f\n", "Total", ':', getTotalHarga());
-                for(Pelanggan pelangganPromo : appliedPromo.keySet()){
-                    if (pelangganPromo.equals(pelanggan) && appliedPromo.get(pelangganPromo) instanceof CashbackPromo) {
-                        Promotion promoPelanggan = appliedPromo.get(pelangganPromo);
-                        double totalDiskon = promoPelanggan.totalCashback(cart.get(pelanggan));
-                        setTotalDiskon(totalDiskon);
-                        System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(),':',totalDiskon);
-                        break;
-                    }
-                    setTotalDiskon(0);
-                    break;
+
+                if (appliedPromo.containsKey(pelanggan) && appliedPromo.get(pelanggan) instanceof CashbackPromo) {
+                    Promotion promoPelanggan = appliedPromo.get(pelanggan);
+                    double totalDiskon = promoPelanggan.totalCashback(cart.get(pelanggan));
+                    setTotalDiskon(totalDiskon);
+                    System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(), ':',
+                            totalDiskon);
                 }
+
                 System.out.printf("%-26s %-8c %s\n", "Saldo", ':', pelanggan.getSaldoAwal());
                 break;
             }
@@ -362,13 +368,6 @@ public class Order implements ReadData {
 
     @Override
     public void loadCart() throws Exception {
-        if (daftarMenu.isEmpty())
-            loadMenu();
-
-        if (daftarPelanggan.isEmpty())
-            loadPelanggan();
-
-        cart.clear();
         File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt");
         Scanner in = new Scanner(file);
 
@@ -438,7 +437,7 @@ public class Order implements ReadData {
             String line = in.nextLine();
             if (line.isEmpty())
                 continue;
-            
+
             String[] columns = line.split("\\|");
 
             String tipePelanggan = columns[0].trim();
@@ -460,7 +459,7 @@ public class Order implements ReadData {
 
             Pelanggan pelanggan;
 
-            if (tipePelanggan.equals("GUEST")) 
+            if (tipePelanggan.equals("GUEST"))
                 pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
             else
                 pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);

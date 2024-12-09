@@ -32,9 +32,6 @@ public class Admin implements ReadData {
     }
 
     public void createPromo(String input) throws Exception {
-        if (daftarPromo.isEmpty())
-            loadPromo();
-
         String[] bagianMenu = input.split(" ", 3);
         String dataPromoJenis = bagianMenu[2];
         String[] unitJenisPromo = dataPromoJenis.split(" ", 2);
@@ -72,9 +69,6 @@ public class Admin implements ReadData {
     }
 
     public void createMenu(String input) throws Exception {
-        if (daftarMenu.isEmpty())
-            loadMenu();
-
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarMenu.txt";
         try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
             String[] bagianMenu = input.split(" ", 3);
@@ -98,9 +92,6 @@ public class Admin implements ReadData {
     }
 
     public void createGuest(String input) throws Exception {
-        if (daftarPelanggan.isEmpty())
-            loadPelanggan();
-
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
         try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
             String[] bagianPelanggan = input.split(" ", 3);
@@ -137,9 +128,6 @@ public class Admin implements ReadData {
     }
 
     public void createMember(String input) throws Exception {
-        if (daftarPelanggan.isEmpty())
-            loadPelanggan();
-
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
         try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
             String[] bagianPelanggan = input.split(" ", 3);
@@ -177,9 +165,6 @@ public class Admin implements ReadData {
     }
 
     public void topupSaldoPelanggan(String input) throws Exception {
-        if(daftarPelanggan.isEmpty())
-            loadPelanggan();
-
         String[] bagianPelanggan = input.split(" ", 2);
         String pelangganTopup = bagianPelanggan[1];
         String[] unitTopup = pelangganTopup.split(" ");
@@ -233,9 +218,6 @@ public class Admin implements ReadData {
     }
 
     public void readPromo(String input) throws Exception {
-        if (daftarPromo.isEmpty())
-            loadPromo();
-
         System.out.println("=".repeat(75));
         System.out.println(" ".repeat(30) + "Daftar Promo");
         System.out.println("=".repeat(75));
@@ -247,9 +229,6 @@ public class Admin implements ReadData {
     }
 
     public void readMenu(String input) throws Exception {
-        if (daftarMenu.isEmpty())
-            loadMenu();
-
         System.out.println("=".repeat(39));
         System.out.println(" ".repeat(14) + "Daftar Menu");
         System.out.println("=".repeat(39));
@@ -259,9 +238,6 @@ public class Admin implements ReadData {
     }
 
     public void readPelanggan(String input) throws Exception {
-        if (daftarPelanggan.isEmpty())
-            loadPelanggan();
-
         System.out.println("=".repeat(71));
         System.out.println(" ".repeat(27) + "Daftar Pelanggan");
         System.out.println("=".repeat(71));
@@ -342,7 +318,6 @@ public class Admin implements ReadData {
 
     @Override
     public void loadCart() throws Exception {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'loadCart'");
     }
 

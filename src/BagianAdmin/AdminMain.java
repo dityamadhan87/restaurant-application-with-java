@@ -5,6 +5,9 @@ import java.util.Scanner;
 public class AdminMain {
     public static void main(String[] args) throws Exception {
         Admin admin = new Admin();
+        admin.loadMenu();
+        admin.loadPelanggan();
+        admin.loadPromo();
         Scanner in = new Scanner(System.in);
         while (true) {
             String input = in.nextLine();

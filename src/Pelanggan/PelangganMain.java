@@ -1,7 +1,6 @@
 package Pelanggan;
 
 import java.util.Scanner;
-
 import BagianAdmin.Admin;
 import Order.Order;
 
@@ -9,6 +8,12 @@ public class PelangganMain {
     public static void main(String[] args) throws Exception {
         Admin admin = new Admin();
         Order order = new Order();
+        admin.loadMenu();
+        admin.loadPelanggan();
+        order.loadMenu();
+        order.loadPelanggan();
+        order.loadPromo();
+        order.loadCart();
         Scanner in = new Scanner(System.in);
         while (true) {
             String input = in.nextLine();
