@@ -5,6 +5,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -16,14 +18,20 @@ import java.util.LinkedList;
 import InterfaceRestaurant.ReadData;
 import Menu.Menu;
 import Pelanggan.*;
+import Promotion.*;
 
 public class Order implements ReadData {
     private Menu menu;
     private int kuantitas;
     private int subTotalBiayaMakanan;
+    private int ongkosKirim = 15000;
+    private double totalDiskon;
+    private int totalHarga;
     private Map<Pelanggan, Set<Order>> cart = new LinkedHashMap<>();
     private Set<Menu> daftarMenu = new LinkedHashSet<>();
     private Set<Pelanggan> daftarPelanggan = new LinkedHashSet<>();
+    private Set<Promotion> daftarPromo = new LinkedHashSet<>();
+    private Map<Pelanggan,Promotion> appliedPromo = new LinkedHashMap<>();
 
     public Order(Menu menu, int kuantitas) {
         this.menu = menu;
@@ -40,14 +48,91 @@ public class Order implements ReadData {
     public int getKuantitas() {
         return kuantitas;
     }
+    
+    public int getSubTotalBiayaMakanan() {
+        subTotalBiayaMakanan = kuantitas * Integer.parseInt(menu.getHargaMenu());
+        return subTotalBiayaMakanan;
+    }
+
+    public void setSubTotalBiayaMakanan(int subTotalBiayaMakanan) {
+        this.subTotalBiayaMakanan = subTotalBiayaMakanan;
+    }
+
+    public int getOngkosKirim() {
+        return ongkosKirim;
+    }
+
+    public void setTotalDiskon(double totalDiskon){
+        this.totalDiskon = totalDiskon;
+    }
+
+    public double getTotalHarga() {
+        totalHarga = (int) (subTotalBiayaMakanan + ongkosKirim - totalDiskon);
+        return totalHarga;
+    }
 
     public Map<Pelanggan, Set<Order>> getCart() {
         return cart;
     }
 
-    public int getSubTotalBiayaMakanan() {
-        subTotalBiayaMakanan = kuantitas * Integer.parseInt(menu.getHargaMenu());
-        return subTotalBiayaMakanan;
+    public void applyPromo(String input) throws Exception{
+        if (daftarPromo.isEmpty()) {
+            loadPromo();
+        }
+        String[] promoPelanggan = input.split(" ", 2);
+        String promoDiterapkan = promoPelanggan[1];
+        String[] unitDataPromo = promoDiterapkan.split(" ");
+        String idPelanggan = unitDataPromo[0];
+        String kodePromo = unitDataPromo[1];
+
+        Pelanggan pelangganOrder = new Guest(idPelanggan);
+        Promotion promo = new PercentOffPromo(kodePromo);
+
+        for (Pelanggan getPelanggan : daftarPelanggan) {
+            if (getPelanggan.getIdPelanggan().equals(idPelanggan)) {
+                pelangganOrder = getPelanggan;
+                break;
+            }
+        }
+
+        for (Promotion promotion : daftarPromo) {
+            if (promotion.getKodePromo().equals(kodePromo)) {
+                promo = promotion;
+                break;
+            }
+        }
+
+        if (!promo.isCustomerEligible(pelangganOrder)) {
+            System.out.println("APPLY_PROMO FAILED: CUSTOMER IS NOT ELIGIBLE");
+            return;
+        }
+
+        Set<Order> pesananPelanggan = cart.get(pelangganOrder);
+
+        if (promo instanceof PercentOffPromo && promo instanceof CashbackPromo) {
+            if(!promo.isMinimumPriceEligible(pesananPelanggan)){
+                System.out.println("APPLY_PROMO FAILED: MINIMUM PRICE NOT MET");
+                return;
+            }
+        }
+
+        if(promo instanceof FreeShippingPromo){
+            if(!promo.isShippingFeeEligible(pesananPelanggan)){
+                System.out.println("APPLY_PROMO FAILED: SHIPPING FEE NOT MET");
+                return;
+            }
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        LocalDate tanggalExpired = LocalDate.parse(promo.getEndDate(), formatter);
+
+        if (LocalDate.now().isAfter(tanggalExpired)) {
+            System.out.println("APPLY_PROMO FAILED: PROMO "+promo.getKodePromo()+ " HAS EXPIRED");
+            return;
+        }
+
+        appliedPromo.put(pelangganOrder, promo);
+        System.out.println("APPLY_PROMO SUCCESS: " + promo.getKodePromo());
     }
 
     public void makeOrder(String input) throws Exception {
@@ -224,8 +309,24 @@ public class Order implements ReadData {
                             order.getSubTotalBiayaMakanan());
                     total += order.getSubTotalBiayaMakanan();
                 }
+                setSubTotalBiayaMakanan(total);
                 System.out.print("=".repeat(50) + "\n");
                 System.out.printf("%-26s %-8c %d\n", "Total", ':', total);
+                for(Pelanggan pelangganPromo : appliedPromo.keySet()){
+                    if (pelangganPromo.equals(pelanggan)) {
+                        Promotion promoPelanggan = appliedPromo.get(pelangganPromo);
+                        double totalDiskon = promoPelanggan.totalDiscount(cart.get(pelanggan));
+                        setTotalDiskon(totalDiskon);
+                        System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(),':',totalDiskon);
+                        break;
+                    }
+                    setTotalDiskon(0);
+                    break;
+                }
+                System.out.printf("%-26s %-8c %d\n", "Ongkos kirim", ':', ongkosKirim);
+                System.out.print("=".repeat(50) + "\n");
+                System.out.printf("%-26s %-8c %.0f\n", "Total", ':', getTotalHarga());
+                System.out.printf("%-26s %-8c %s\n", "Saldo", ':', pelanggan.getSaldoAwal());
                 break;
             }
         }
@@ -366,5 +467,42 @@ public class Order implements ReadData {
         } else if (!menu.equals(other.menu))
             return false;
         return true;
+    }
+
+    @Override
+    public void loadPromo() throws Exception {
+        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPromo.txt");
+        Scanner in = new Scanner(file);
+
+        while (in.hasNextLine()) {
+            String line = in.nextLine();
+            if (line.isEmpty())
+                continue;
+
+            String[] columns = line.split("\\|");
+
+            String jenisPromo = columns[0].trim();
+            String kodePromo = columns[1].trim();
+            String startDate = columns[2].trim();
+            String endDate = columns[3].trim();
+            String persenPotongan = columns[4].trim();
+            String maksPotongan = columns[5].trim();
+            String minPembelian = columns[6].trim();
+
+            Promotion promo;
+
+            if (jenisPromo.equals("DELIVERY"))
+                promo = new FreeShippingPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                        minPembelian);
+            else if (jenisPromo.equals("DISCOUNT"))
+                promo = new PercentOffPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
+            else
+                promo = new CashbackPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
+
+            if (daftarPromo.contains(promo))
+                return;
+
+            daftarPromo.add(promo);
+        }
     }
 }

@@ -22,6 +22,8 @@ public class PelangganMain {
                 order.removeFromCart(input);
             else if(input.startsWith("TOPUP"))
                 admin.topupSaldoPelanggan(input);
+            else if(input.startsWith("APPLY_PROMO"))
+                order.applyPromo(input);
         }
     }
 }

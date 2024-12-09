@@ -15,11 +15,13 @@ import java.util.LinkedList;
 import InterfaceRestaurant.ReadData;
 import Menu.Menu;
 import Pelanggan.*;
+import Promotion.*;
 
 public class Admin implements ReadData {
 
     private Set<Menu> daftarMenu = new LinkedHashSet<>();
     private Set<Pelanggan> daftarPelanggan = new LinkedHashSet<>();
+    private Set<Promotion> daftarPromo = new LinkedHashSet<>();
 
     public Set<Menu> getDaftarMenu() {
         return daftarMenu;
@@ -27,6 +29,46 @@ public class Admin implements ReadData {
 
     public Set<Pelanggan> getDaftarPelanggan() {
         return daftarPelanggan;
+    }
+
+    public void createPromo(String input) throws Exception {
+        if (daftarPromo.isEmpty())
+            loadPromo();
+
+        String[] bagianMenu = input.split(" ", 3);
+        String dataPromoJenis = bagianMenu[2];
+        String[] unitJenisPromo = dataPromoJenis.split(" ", 2);
+        String jenisPromo = unitJenisPromo[0];
+        String unitDataPromo = unitJenisPromo[1];
+        String[] unitPromo = unitDataPromo.split("\\|");
+        String kodePromo = unitPromo[0];
+        String startDate = unitPromo[1];
+        String endDate = unitPromo[2];
+        String persenPotongan = unitPromo[3];
+        String maksPotongan = unitPromo[4];
+        String minPembelian = unitPromo[5];
+
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPromo.txt";
+        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
+            Promotion promo;
+            if (jenisPromo.equals("DELIVERY"))
+                promo = new FreeShippingPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                        minPembelian);
+            else if (jenisPromo.equals("DISCOUNT"))
+                promo = new PercentOffPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
+            else
+                promo = new CashbackPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
+
+            if (daftarPromo.contains(promo)) {
+                System.out.println("CREATE PROMO " + jenisPromo + " FAILED: " + kodePromo + " IS EXISTS");
+                return;
+            }
+
+            daftarPromo.add(promo);
+            output.printf("%s %c %-10s %c %-10s %c %-10s %c %-3s %c %-7s %c %s\n", promo.getTipePromo(), '|', kodePromo,
+                    '|', startDate, '|', endDate, '|', persenPotongan, '|', maksPotongan, '|', minPembelian);
+            System.out.println("CREATE PROMO " + jenisPromo + " SUCCESS: " + kodePromo);
+        }
     }
 
     public void createMenu(String input) throws Exception {
@@ -127,14 +169,17 @@ public class Admin implements ReadData {
             }
 
             daftarPelanggan.add(pelanggan);
-            output.printf("%-6s %c %-7s %c %-25s %c %-10s %c %s\n", pelanggan.getTipePelanggan(),'|',idPelanggan, '|', namaPelanggan, '|',
+            output.printf("%-6s %c %-7s %c %-25s %c %-10s %c %s\n", pelanggan.getTipePelanggan(), '|', idPelanggan, '|',
+                    namaPelanggan, '|',
                     tanggalMenjadiMember, '|', saldoAwal);
             System.out.println("CREATE MEMBER SUCCESS: " + idPelanggan + " " + pelanggan.getFullName());
         }
     }
 
     public void topupSaldoPelanggan(String input) throws Exception {
-        loadPelanggan();
+        if(daftarPelanggan.isEmpty())
+            loadPelanggan();
+
         String[] bagianPelanggan = input.split(" ", 2);
         String pelangganTopup = bagianPelanggan[1];
         String[] unitTopup = pelangganTopup.split(" ");
@@ -165,7 +210,8 @@ public class Admin implements ReadData {
                 int saldoAkhir = Integer.parseInt(saldoTopup) + Integer.parseInt(saldoFile);
 
                 if (idPelangganFile.equals(idPelanggan)) {
-                    line = String.format("%-6s %c %-7s %c %-25s %c %-10s %c %d", pelanggan.getTipePelanggan(),'|',idPelanggan, '|', pelanggan.getFullName(), '|',
+                    line = String.format("%-6s %c %-7s %c %-25s %c %-10s %c %d", pelanggan.getTipePelanggan(), '|',
+                            idPelanggan, '|', pelanggan.getFullName(), '|',
                             pelanggan.getTanggalMenjadiMember(), '|', saldoAkhir);
                     System.out
                             .println("TOPUP SUCCESS: " + pelanggan.getFullName() + " " + pelanggan.getSaldoAwal() + "=>"
@@ -184,6 +230,20 @@ public class Admin implements ReadData {
         }
         daftarPelanggan.remove(pelanggan);
         daftarPelanggan.add(pelanggan);
+    }
+
+    public void readPromo(String input) throws Exception {
+        if (daftarPromo.isEmpty())
+            loadPromo();
+
+        System.out.println("=".repeat(75));
+        System.out.println(" ".repeat(30) + "Daftar Promo");
+        System.out.println("=".repeat(75));
+
+        for (Promotion promo : daftarPromo)
+            System.out.printf("%-11s %-11s %-13s %-13s %-6s %-9s %s\n", promo.getTipePromo(), promo.getKodePromo(),
+                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.getMaksPotongan(),
+                    promo.getMinPembelian());
     }
 
     public void readMenu(String input) throws Exception {
@@ -207,7 +267,8 @@ public class Admin implements ReadData {
         System.out.println("=".repeat(71));
 
         for (Pelanggan pelanggan : daftarPelanggan)
-            System.out.printf("%-10s %-11s %-26s %-14s %s\n", pelanggan.getTipePelanggan(),pelanggan.getIdPelanggan(), pelanggan.getFullName(),
+            System.out.printf("%-10s %-11s %-26s %-14s %s\n", pelanggan.getTipePelanggan(), pelanggan.getIdPelanggan(),
+                    pelanggan.getFullName(),
                     pelanggan.getTanggalMenjadiMember(), pelanggan.getSaldoAwal());
     }
 
@@ -220,7 +281,7 @@ public class Admin implements ReadData {
             String line = in.nextLine();
             if (line.isEmpty())
                 continue;
-            
+
             String[] columns = line.split("\\|");
 
             String idMenu = columns[0].trim();
@@ -245,7 +306,7 @@ public class Admin implements ReadData {
             String line = in.nextLine();
             if (line.isEmpty())
                 continue;
-            
+
             String[] columns = line.split("\\|");
 
             String tipePelanggan = columns[0].trim();
@@ -267,7 +328,7 @@ public class Admin implements ReadData {
 
             Pelanggan pelanggan;
 
-            if (tipePelanggan.equals("GUEST")) 
+            if (tipePelanggan.equals("GUEST"))
                 pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
             else
                 pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
@@ -283,5 +344,42 @@ public class Admin implements ReadData {
     public void loadCart() throws Exception {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'loadCart'");
+    }
+
+    @Override
+    public void loadPromo() throws Exception {
+        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPromo.txt");
+        Scanner in = new Scanner(file);
+
+        while (in.hasNextLine()) {
+            String line = in.nextLine();
+            if (line.isEmpty())
+                continue;
+
+            String[] columns = line.split("\\|");
+
+            String jenisPromo = columns[0].trim();
+            String kodePromo = columns[1].trim();
+            String startDate = columns[2].trim();
+            String endDate = columns[3].trim();
+            String persenPotongan = columns[4].trim();
+            String maksPotongan = columns[5].trim();
+            String minPembelian = columns[6].trim();
+
+            Promotion promo;
+
+            if (jenisPromo.equals("DELIVERY"))
+                promo = new FreeShippingPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                        minPembelian);
+            else if (jenisPromo.equals("DISCOUNT"))
+                promo = new PercentOffPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
+            else
+                promo = new CashbackPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
+
+            if (daftarPromo.contains(promo))
+                return;
+
+            daftarPromo.add(promo);
+        }
     }
 }

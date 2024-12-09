@@ -1,7 +1,5 @@
 package Pelanggan;
 
-import java.time.Period;
-
 public abstract class Pelanggan {
     String tipePelanggan;
     private String idPelanggan;
@@ -59,7 +57,7 @@ public abstract class Pelanggan {
         this.saldoAwal = saldoAwal;
     }
 
-    public abstract Period lamaMenjadiMember();
+    public abstract long lamaMenjadiMember();
 
     @Override
     public int hashCode() {

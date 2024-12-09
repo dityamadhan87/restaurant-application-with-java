@@ -14,10 +14,14 @@ public class AdminMain {
                 admin.readMenu(input);
             else if (input.startsWith("READ PELANGGAN"))
                 admin.readPelanggan(input);
+            else if(input.startsWith("READ PROMO"))
+                admin.readPromo(input);
             else if (input.startsWith("CREATE MEMBER"))
                 admin.createMember(input);
             else if(input.startsWith("CREATE GUEST"))
                 admin.createGuest(input);
+            else if(input.startsWith("CREATE PROMO"))
+                admin.createPromo(input);
             else {
                 in.close();
                 break;

@@ -1,8 +1,8 @@
 package Pelanggan;
 
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 public class Member extends Pelanggan{
     public Member(String idMember){
@@ -19,11 +19,11 @@ public class Member extends Pelanggan{
     }
 
     @Override
-    public Period lamaMenjadiMember() {
+    public long lamaMenjadiMember() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         LocalDate tanggalMenjadiMember = LocalDate.parse(this.tanggalMenjadiMember, formatter);
 
-        Period period = Period.between(tanggalMenjadiMember, LocalDate.now());
-        return period;
+        long totalHari = ChronoUnit.DAYS.between(tanggalMenjadiMember, LocalDate.now());
+        return totalHari;
     }
 }

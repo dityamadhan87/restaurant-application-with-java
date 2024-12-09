@@ -1,7 +1,5 @@
 package Pelanggan;
 
-import java.time.Period;
-
 public class Guest extends Pelanggan{
     public Guest(String idGuest){
         super(idGuest);
@@ -17,7 +15,7 @@ public class Guest extends Pelanggan{
     }
     
     @Override
-    public Period lamaMenjadiMember() {
+    public long lamaMenjadiMember() {
         throw new UnsupportedOperationException("Guest tidak menjadi member");
     }
 }
