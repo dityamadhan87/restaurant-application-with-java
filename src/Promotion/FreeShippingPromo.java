@@ -17,17 +17,7 @@ public class FreeShippingPromo extends Promotion {
 
     @Override
     public double totalDiscount(Order x) {
-        return 0;
-    }
-
-    @Override
-    public double totalCashback(Order x) {
-        return 0;
-    }
-
-    @Override
-    public double totalPotonganOngkosKirim(Order x) {
-        double discount = (Double.parseDouble(getPersenPotongan()) / 100) * x.getSubTotalBiayaMakanan();
+        double discount = (Double.parseDouble(getPersenPotongan()) / 100) * x.getOngkosKirim();
         if (discount > Double.parseDouble(getMaksPotongan())) {
             return Double.parseDouble(getMaksPotongan());
         }

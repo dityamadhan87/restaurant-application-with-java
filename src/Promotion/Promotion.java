@@ -3,7 +3,7 @@ package Promotion;
 import Order.Order;
 import Pelanggan.*;
 
-public abstract class Promotion implements Applicable, Comparable<Promotion> {
+public abstract class Promotion implements Applicable{
     String tipePromo;
     private String kodePromo;
     private String startDate;
@@ -71,12 +71,6 @@ public abstract class Promotion implements Applicable, Comparable<Promotion> {
     @Override
     public boolean isShippingFeeEligible(Order x) {
         return x.getOngkosKirim() >= 15000;
-    }
-
-    @Override
-    public int compareTo(Promotion o) {
-        // TODO Auto-generated method stub
-        return 0;
     }
 
     @Override

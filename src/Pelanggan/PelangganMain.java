@@ -29,6 +29,9 @@ public class PelangganMain {
                 admin.topupSaldoPelanggan(input);
             else if(input.startsWith("APPLY_PROMO"))
                 order.applyPromo(input);
+            else if(input.startsWith("READ_PROMO")){
+                order.readPromo(input);
+            }
         }
     }
 }

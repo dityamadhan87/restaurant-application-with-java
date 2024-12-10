@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.LinkedHashSet;
@@ -69,7 +70,61 @@ public class Order implements ReadData {
         return cart;
     }
 
-    public void applyPromo(String input) throws Exception {
+    public void readPromo(String input){
+        String[] promoPelanggan = input.split(" ", 2);
+        String idPelanggan = promoPelanggan[1];
+        Pelanggan pelangganOrder = new Guest(idPelanggan);
+
+        for (Pelanggan getPelanggan : daftarPelanggan) {
+            if (getPelanggan.getIdPelanggan().equals(idPelanggan)) {
+                pelangganOrder = getPelanggan;
+                break;
+            }
+        }
+
+        Set<ItemPesanan> pesananPelanggan = cart.get(pelangganOrder);
+        Map<Pelanggan, Set<ItemPesanan>> cart = new LinkedHashMap<>();
+        cart.computeIfAbsent(pelangganOrder, _ -> pesananPelanggan);
+        Order order = new Order(cart);
+
+        List<Promotion> sortedPromotions = new ArrayList<>(daftarPromo);
+
+        sortedPromotions.sort(new PromotionComparator(order));
+
+        System.out.println("=".repeat(66));
+        System.out.println(" ".repeat(26) + "Daftar Promo");
+        System.out.println("=".repeat(66));
+        
+        for (Promotion promo : sortedPromotions){
+            if (!promo.isCustomerEligible(pelangganOrder)) {
+                continue;
+            }
+            if (promo instanceof PercentOffPromo || promo instanceof CashbackPromo) {
+                if (!promo.isMinimumPriceEligible(order)) {
+                    continue;
+                }
+            }
+            if (promo instanceof FreeShippingPromo) {
+                if (!promo.isShippingFeeEligible(order)) {
+                    continue;
+                }
+            }
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+            LocalDate tanggalExpired = LocalDate.parse(promo.getEndDate(), formatter);
+            LocalDate startDate = LocalDate.parse(promo.getStartDate(), formatter);
+            if (startDate.isAfter(LocalDate.now())) {
+                continue;
+            }
+    
+            if (LocalDate.now().isAfter(tanggalExpired)) {
+                continue;
+            }
+            System.out.printf("%-11s %-11s %-13s %-13s %-6s %s\n", promo.getTipePromo(), promo.getKodePromo(),
+                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(order));
+        }
+    }
+
+    public void applyPromo(String input){
         String[] promoPelanggan = input.split(" ", 2);
         String promoDiterapkan = promoPelanggan[1];
         String[] unitDataPromo = promoDiterapkan.split(" ");
@@ -103,7 +158,7 @@ public class Order implements ReadData {
         cart.computeIfAbsent(pelangganOrder, _ -> pesananPelanggan);
         Order order = new Order(cart);
 
-        if (promo instanceof PercentOffPromo && promo instanceof CashbackPromo) {
+        if (promo instanceof PercentOffPromo || promo instanceof CashbackPromo) {
             if (!promo.isMinimumPriceEligible(order)) {
                 System.out.println("APPLY_PROMO FAILED: MINIMUM PRICE NOT MET");
                 return;
@@ -299,7 +354,7 @@ public class Order implements ReadData {
         }
     }
 
-    public void printDetails(String input) throws Exception {
+    public void printDetails(String input){
         String[] bagianPrint = input.split(" ", 2);
         String idPelanggan = bagianPrint[1];
         boolean cekIdPelanggan = true;
@@ -338,7 +393,7 @@ public class Order implements ReadData {
 
                 if (appliedPromo.containsKey(pelanggan) && appliedPromo.get(pelanggan) instanceof FreeShippingPromo) {
                     Promotion promoPelanggan = appliedPromo.get(pelanggan);
-                    double totalDiskon = promoPelanggan.totalPotonganOngkosKirim(order);
+                    double totalDiskon = promoPelanggan.totalDiscount(order);
                     order.setTotalDiskon(totalDiskon);
                     System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(), ':',
                             totalDiskon);
@@ -349,7 +404,7 @@ public class Order implements ReadData {
 
                 if (appliedPromo.containsKey(pelanggan) && appliedPromo.get(pelanggan) instanceof CashbackPromo) {
                     Promotion promoPelanggan = appliedPromo.get(pelanggan);
-                    double totalDiskon = promoPelanggan.totalCashback(order);
+                    double totalDiskon = promoPelanggan.totalDiscount(order);
                     order.setTotalDiskon(totalDiskon);
                     System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(), ':',
                             totalDiskon);

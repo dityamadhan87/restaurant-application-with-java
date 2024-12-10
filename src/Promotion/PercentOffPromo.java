@@ -23,14 +23,4 @@ public class PercentOffPromo extends Promotion {
         }
         return discount;
     }
-
-    @Override
-    public double totalCashback(Order x) {
-        return 0;
-    }
-
-    @Override
-    public double totalPotonganOngkosKirim(Order x) {
-        return 0;
-    }
 }

@@ -16,20 +16,10 @@ public class CashbackPromo extends Promotion {
 
     @Override
     public double totalDiscount(Order x) {
-        return 0;
-    }
-
-    @Override
-    public double totalCashback(Order x) {
         double discount = (Double.parseDouble(getPersenPotongan()) / 100) * x.getSubTotalBiayaMakanan();
         if (discount > Double.parseDouble(getMaksPotongan())) {
             return Double.parseDouble(getMaksPotongan());
         }
         return discount;
-    }
-
-    @Override
-    public double totalPotonganOngkosKirim(Order x) {
-        return 0;
     }
 }

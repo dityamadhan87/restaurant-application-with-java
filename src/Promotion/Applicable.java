@@ -8,6 +8,4 @@ public interface Applicable {
     boolean isMinimumPriceEligible(Order x);
     boolean isShippingFeeEligible(Order x);
     double totalDiscount(Order x);
-    double totalCashback(Order x);
-    double totalPotonganOngkosKirim(Order x);
 }
