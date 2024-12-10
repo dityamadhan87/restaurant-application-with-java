@@ -92,20 +92,25 @@ public class Order implements ReadData {
         sortedPromotions.sort(new PromotionComparator(order));
 
         System.out.println("=".repeat(66));
-        System.out.println(" ".repeat(26) + "Daftar Promo");
+        System.out.println(" ".repeat(25) + "Eligible Promo");
         System.out.println("=".repeat(66));
         
+        List<Promotion> notEligiblePromo = new ArrayList<>();
+
         for (Promotion promo : sortedPromotions){
             if (!promo.isCustomerEligible(pelangganOrder)) {
+                notEligiblePromo.add(promo);
                 continue;
             }
             if (promo instanceof PercentOffPromo || promo instanceof CashbackPromo) {
                 if (!promo.isMinimumPriceEligible(order)) {
+                    notEligiblePromo.add(promo);
                     continue;
                 }
             }
             if (promo instanceof FreeShippingPromo) {
                 if (!promo.isShippingFeeEligible(order)) {
+                    notEligiblePromo.add(promo);
                     continue;
                 }
             }
@@ -113,12 +118,22 @@ public class Order implements ReadData {
             LocalDate tanggalExpired = LocalDate.parse(promo.getEndDate(), formatter);
             LocalDate startDate = LocalDate.parse(promo.getStartDate(), formatter);
             if (startDate.isAfter(LocalDate.now())) {
+                notEligiblePromo.add(promo);
                 continue;
             }
     
             if (LocalDate.now().isAfter(tanggalExpired)) {
+                notEligiblePromo.add(promo);
                 continue;
             }
+            System.out.printf("%-11s %-11s %-13s %-13s %-6s %s\n", promo.getTipePromo(), promo.getKodePromo(),
+                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(order));
+        }
+        System.out.println("=".repeat(66));
+        System.out.println(" ".repeat(24) + "Not Eligible Promo");
+        System.out.println("=".repeat(66));
+
+        for(Promotion promo : notEligiblePromo){
             System.out.printf("%-11s %-11s %-13s %-13s %-6s %s\n", promo.getTipePromo(), promo.getKodePromo(),
                     promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(order));
         }

@@ -54,7 +54,7 @@ public class Admin implements ReadData {
             }
 
             daftarPromo.add(promo);
-            output.printf("%s %c %-10s %c %-10s %c %-10s %c %-3s %c %-7s %c %s\n", promo.getTipePromo(), '|', kodePromo,
+            output.printf("%s %c %-10s %c %-10s %c %-10s %c %-4s %c %-7s %c %s\n", promo.getTipePromo(), '|', kodePromo,
                     '|', startDate, '|', endDate, '|', persenPotongan, '|', maksPotongan, '|', minPembelian);
             System.out.println("CREATE PROMO " + jenisPromo + " SUCCESS: " + kodePromo);
         }
