@@ -1,7 +1,5 @@
 package Promotion;
 
-import java.util.Set;
-
 import Order.Order;
 import Pelanggan.*;
 
@@ -66,22 +64,13 @@ public abstract class Promotion implements Applicable, Comparable<Promotion> {
     }
 
     @Override
-    public boolean isMinimumPriceEligible(Set<Order> x) {
-        int total = 0;
-        for (Order order : x) {
-            total += order.getSubTotalBiayaMakanan();
-        }
-        return total >= Integer.parseInt(minPembelian);
+    public boolean isMinimumPriceEligible(Order x) {
+        return x.getSubTotalBiayaMakanan() >= Integer.parseInt(minPembelian);
     }
 
     @Override
-    public boolean isShippingFeeEligible(Set<Order> x) {
-        int ongkir = 0;
-        for (Order order : x) {
-            ongkir = order.getOngkosKirim();
-            break;
-        }
-        return ongkir >= 15000;
+    public boolean isShippingFeeEligible(Order x) {
+        return x.getOngkosKirim() >= 15000;
     }
 
     @Override

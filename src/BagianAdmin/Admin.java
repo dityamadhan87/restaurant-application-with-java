@@ -23,14 +23,6 @@ public class Admin implements ReadData {
     private Set<Pelanggan> daftarPelanggan = new LinkedHashSet<>();
     private Set<Promotion> daftarPromo = new LinkedHashSet<>();
 
-    public Set<Menu> getDaftarMenu() {
-        return daftarMenu;
-    }
-
-    public Set<Pelanggan> getDaftarPelanggan() {
-        return daftarPelanggan;
-    }
-
     public void createPromo(String input) throws Exception {
         String[] bagianMenu = input.split(" ", 3);
         String dataPromoJenis = bagianMenu[2];

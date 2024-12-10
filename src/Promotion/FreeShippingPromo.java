@@ -1,7 +1,5 @@
 package Promotion;
 
-import java.util.Set;
-
 import Order.Order;
 
 public class FreeShippingPromo extends Promotion {
@@ -18,22 +16,18 @@ public class FreeShippingPromo extends Promotion {
     }
 
     @Override
-    public double totalDiscount(Set<Order> x) {
+    public double totalDiscount(Order x) {
         return 0;
     }
 
     @Override
-    public double totalCashback(Set<Order> x) {
+    public double totalCashback(Order x) {
         return 0;
     }
 
     @Override
-    public double totalPotonganOngkosKirim(Set<Order> x) {
-        int total = 0;
-        for (Order order : x) {
-            total += order.getSubTotalBiayaMakanan();
-        }
-        double discount = (Double.parseDouble(getPersenPotongan()) / 100) * total;
+    public double totalPotonganOngkosKirim(Order x) {
+        double discount = (Double.parseDouble(getPersenPotongan()) / 100) * x.getSubTotalBiayaMakanan();
         if (discount > Double.parseDouble(getMaksPotongan())) {
             return Double.parseDouble(getMaksPotongan());
         }
