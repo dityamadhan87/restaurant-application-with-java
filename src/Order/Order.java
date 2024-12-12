@@ -8,9 +8,7 @@ import java.io.FileWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
-import java.util.Map;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,27 +24,62 @@ public class Order implements ReadData {
     private int ongkosKirim = 15000;
     private double totalDiskon;
     private int totalHarga;
-    private Map<Pelanggan, Set<ItemPesanan>> cart = new LinkedHashMap<>();
+    private Set<Order> kumpulanPesanan = new LinkedHashSet<>();
+    private Set<Order> historiPesanan = new LinkedHashSet<>();
     private Set<Menu> daftarMenu = new LinkedHashSet<>();
     private Set<Pelanggan> daftarPelanggan = new LinkedHashSet<>();
     private Set<Promotion> daftarPromo = new LinkedHashSet<>();
-    private Map<Pelanggan, Promotion> appliedPromo = new LinkedHashMap<>();
+    private Promotion appliedPromo;
+    private Pelanggan pelanggan;
+    private Set<ItemPesanan> item;
+    private IdentitasCheckOut idenCheckOut;
 
-    public Order(Map<Pelanggan, Set<ItemPesanan>> cart) {
-        this.cart = cart;
+    public Order(Pelanggan pelanggan, Set<ItemPesanan> item, Promotion appliedPromo) {
+        this.pelanggan = pelanggan;
+        this.item = item;
+        this.appliedPromo = appliedPromo;
     }
 
+    public Order(IdentitasCheckOut idenCheckOut, Pelanggan pelanggan, Set<ItemPesanan> item, Promotion appliedPromo) {
+        this.idenCheckOut = idenCheckOut;
+        this.pelanggan = pelanggan;
+        this.item = item;
+        this.appliedPromo = appliedPromo;
+    }
+    
     public Order() {
+    }
+
+    public IdentitasCheckOut getIdenCheckOut() {
+        return idenCheckOut;
+    }
+
+    public void setIdenCheckOut(IdentitasCheckOut idenCheckOut) {
+        this.idenCheckOut = idenCheckOut;
     }
 
     public int getSubTotalBiayaMakanan() {
         subTotalBiayaMakanan = 0;
-        for(Set<ItemPesanan> pesananPelanggan : cart.values()){
-            for(ItemPesanan item : pesananPelanggan){
-                subTotalBiayaMakanan += Integer.parseInt(item.getMenu().getHargaMenu()) * item.getKuantitas();
-            }
+        for (ItemPesanan itemPesanan : item) {
+            subTotalBiayaMakanan += Integer.parseInt(itemPesanan.getMenu().getHargaMenu()) * itemPesanan.getKuantitas();
         }
         return subTotalBiayaMakanan;
+    }
+
+    public Promotion getAppliedPromo() {
+        return appliedPromo;
+    }
+
+    public void setAppliedPromo(Promotion appliedPromo) {
+        this.appliedPromo = appliedPromo;
+    }
+
+    public Pelanggan getPelanggan() {
+        return pelanggan;
+    }
+
+    public Set<ItemPesanan> getItem() {
+        return item;
     }
 
     public void setSubTotalBiayaMakanan(int subTotalBiayaMakanan) {
@@ -66,8 +99,59 @@ public class Order implements ReadData {
         return totalHarga;
     }
 
-    public Map<Pelanggan, Set<ItemPesanan>> getCart() {
-        return cart;
+    public Set<Order> getKumpulanPesanan() {
+        return kumpulanPesanan;
+    }
+
+    public void checkOut(String input) throws Exception{
+        String[] checkOutPelanggan = input.split(" ", 2);
+        String idPelanggan = checkOutPelanggan[1];
+        Pelanggan pelangganOrder = new Guest(idPelanggan);
+
+        for (Pelanggan getPelanggan : daftarPelanggan) {
+            if (getPelanggan.equals(pelangganOrder)) {
+                pelangganOrder = getPelanggan;
+                break;
+            } 
+        }
+
+        Order existingOrder = null;
+        for(Order order : kumpulanPesanan){
+            if (order.getPelanggan().equals(pelangganOrder)) {
+                existingOrder = order;
+                break;
+            } 
+        }
+
+        if (existingOrder == null) {
+            System.out.println("CHECK_OUT FAILED: CUSTOMER HAVE NOT ORDERED");
+            return;
+        }
+
+        if (Integer.parseInt(pelangganOrder.getSaldoAwal()) < existingOrder.getTotalHarga()) {
+            System.out.println("CHECK_OUT FAILED: " + idPelanggan + " " + pelangganOrder.getFullName() + " INSUFFICIENT BALANCE");
+            return;
+        }
+
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\historiPesanan.txt";
+        File file = new File(filePath);
+        List<String> lines = new LinkedList<>();
+        boolean isUpdated = false;
+
+        int noPesanan = 0;
+
+        if (file.length() > 0) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] columns = line.split("\\|");
+                    String nomorPesanan = columns[0].trim();
+                    noPesanan = Integer.parseInt(nomorPesanan);
+                }
+            }
+        }
+
+        System.out.println(noPesanan);
     }
 
     public void readPromo(String input){
@@ -76,20 +160,28 @@ public class Order implements ReadData {
         Pelanggan pelangganOrder = new Guest(idPelanggan);
 
         for (Pelanggan getPelanggan : daftarPelanggan) {
-            if (getPelanggan.getIdPelanggan().equals(idPelanggan)) {
+            if (getPelanggan.equals(pelangganOrder)) {
                 pelangganOrder = getPelanggan;
+                break;
+            } 
+        }
+
+        Order existingOrder = null;
+        for(Order order : kumpulanPesanan){
+            if (order.getPelanggan().equals(pelangganOrder)) {
+                existingOrder = order;
                 break;
             }
         }
 
-        Set<ItemPesanan> pesananPelanggan = cart.get(pelangganOrder);
-        Map<Pelanggan, Set<ItemPesanan>> cart = new LinkedHashMap<>();
-        cart.computeIfAbsent(pelangganOrder, _ -> pesananPelanggan);
-        Order order = new Order(cart);
+        if (existingOrder == null) {
+            System.out.println("READ_PROMO FAILED: CUSTOMERS HAVE NOT ORDERED");
+            return;
+        }
 
         List<Promotion> sortedPromotions = new ArrayList<>(daftarPromo);
 
-        sortedPromotions.sort(new PromotionComparator(order));
+        sortedPromotions.sort(new PromotionComparator(existingOrder));
 
         System.out.println("=".repeat(66));
         System.out.println(" ".repeat(25) + "Eligible Promo");
@@ -103,13 +195,13 @@ public class Order implements ReadData {
                 continue;
             }
             if (promo instanceof PercentOffPromo || promo instanceof CashbackPromo) {
-                if (!promo.isMinimumPriceEligible(order)) {
+                if (!promo.isMinimumPriceEligible(existingOrder)) {
                     notEligiblePromo.add(promo);
                     continue;
                 }
             }
             if (promo instanceof FreeShippingPromo) {
-                if (!promo.isShippingFeeEligible(order)) {
+                if (!promo.isShippingFeeEligible(existingOrder)) {
                     notEligiblePromo.add(promo);
                     continue;
                 }
@@ -127,7 +219,7 @@ public class Order implements ReadData {
                 continue;
             }
             System.out.printf("%-11s %-11s %-13s %-13s %-6s %s\n", promo.getTipePromo(), promo.getKodePromo(),
-                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(order));
+                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(existingOrder));
         }
         System.out.println("=".repeat(66));
         System.out.println(" ".repeat(24) + "Not Eligible Promo");
@@ -135,7 +227,7 @@ public class Order implements ReadData {
 
         for(Promotion promo : notEligiblePromo){
             System.out.printf("%-11s %-11s %-13s %-13s %-6s %s\n", promo.getTipePromo(), promo.getKodePromo(),
-                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(order));
+                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(existingOrder));
         }
     }
 
@@ -168,20 +260,23 @@ public class Order implements ReadData {
             return;
         }
 
-        Set<ItemPesanan> pesananPelanggan = cart.get(pelangganOrder);
-        Map<Pelanggan, Set<ItemPesanan>> cart = new LinkedHashMap<>();
-        cart.computeIfAbsent(pelangganOrder, _ -> pesananPelanggan);
-        Order order = new Order(cart);
+        Order existingOrder = null;
+        for(Order order : kumpulanPesanan){
+            if (order.getPelanggan().equals(pelangganOrder)) {
+                existingOrder = order;
+                break;
+            }
+        }
 
         if (promo instanceof PercentOffPromo || promo instanceof CashbackPromo) {
-            if (!promo.isMinimumPriceEligible(order)) {
+            if (!promo.isMinimumPriceEligible(existingOrder)) {
                 System.out.println("APPLY_PROMO FAILED: MINIMUM PRICE NOT MET");
                 return;
             }
         }
 
         if (promo instanceof FreeShippingPromo) {
-            if (!promo.isShippingFeeEligible(order)) {
+            if (!promo.isShippingFeeEligible(existingOrder)) {
                 System.out.println("APPLY_PROMO FAILED: SHIPPING FEE NOT MET");
                 return;
             }
@@ -201,7 +296,7 @@ public class Order implements ReadData {
             return;
         }
 
-        appliedPromo.put(pelangganOrder, promo);
+        existingOrder.setAppliedPromo(promo);
         System.out.println("APPLY_PROMO SUCCESS: " + promo.getKodePromo());
     }
 
@@ -265,17 +360,29 @@ public class Order implements ReadData {
             }
         }
 
+        Order existingOrder = null;
+        for(Order order : kumpulanPesanan){
+            if (order.getPelanggan().equals(pelangganOrder)) {
+                existingOrder = order;
+                break;
+            }
+        }
+
+        if(existingOrder == null){
+            existingOrder = new Order(pelangganOrder, new LinkedHashSet<>(), null);
+        }
+
         if (!isUpdated) {
             lines.add(String.format("%-6s %c %-7s %c %-5s %c %s", pelangganOrder.getTipePelanggan(), '|', idPelanggan,
                     '|', idMenu, '|', kuantitas));
-            cart.computeIfAbsent(pelangganOrder, _ -> new LinkedHashSet<>()).add(item);
+            existingOrder.getItem().add(item);
+            kumpulanPesanan.add(existingOrder);
             System.out.println(
                     "ADD_TO_CART SUCCESS: " + kuantitas + " " + menuOrder.getNamaMenu() + " IS ADDED");
         } else {
-            if (cart.containsKey(pelangganOrder)) {
-                Set<ItemPesanan> values = cart.get(pelangganOrder);
-                values.remove(item);
-                values.add(item);
+            if (kumpulanPesanan.contains(existingOrder)) {
+                existingOrder.getItem().remove(item);
+                existingOrder.getItem().add(item);
                 System.out.println("ADD_TO_CART SUCCESS: " + item.getKuantitas() + " " + menuOrder.getNamaMenu()
                         + " QUANTITY IS INCREMENTED");
             }
@@ -301,11 +408,23 @@ public class Order implements ReadData {
         Menu menuOrder = new Menu(idMenu);
         ItemPesanan item = new ItemPesanan(menuOrder, Integer.parseInt(kuantitas));
 
-        if (!cart.containsKey(pelangganOrder)) {
+        Order existingOrder = null;
+        for(Order order : kumpulanPesanan){
+            if (order.getPelanggan().equals(pelangganOrder)) {
+                existingOrder = order;
+                break;
+            }
+        }
+
+        if(existingOrder == null){
+            existingOrder = new Order(pelangganOrder, new LinkedHashSet<>(), null);
+        }
+
+        if (!kumpulanPesanan.contains(existingOrder)) {
             System.out.println("REMOVE FROM CART FAILED: CUSTOMERS HAVE NOT ORDERED");
             return;
         }
-        if (!cart.get(pelangganOrder).contains(item)) {
+        if (!existingOrder.getItem().contains(item)) {
             System.out.println("REMOVE FROM CART FAILED: CUSTOMERS HAVE NOT ORDERED THIS MENU");
             return;
         }
@@ -341,15 +460,13 @@ public class Order implements ReadData {
                 int totalKuantitas = Integer.parseInt(kuantitasFile) - Integer.parseInt(kuantitas);
                 if (totalKuantitas <= 0) {
                     System.out.println("REMOVE FROM CART: " + menuOrder.getNamaMenu() + " IS REMOVED");
-                    Set<ItemPesanan> values = cart.get(pelangganOrder);
-                    values.remove(item);
+                    existingOrder.getItem().remove(item);
                     continue;
                 }
                 line = String.format("%-6s %c %-7s %c %-5s %c %d", pelangganOrder.getTipePelanggan(), '|', idPelanggan,
                         '|', idMenu, '|',
                         totalKuantitas);
-                Set<ItemPesanan> values = cart.get(pelangganOrder);
-                for (ItemPesanan itemPesanan : values) {
+                for (ItemPesanan itemPesanan : existingOrder.getItem()) {
                     if (itemPesanan.equals(item)) {
                         itemPesanan.setKuantitas(totalKuantitas);
                         break;
@@ -373,22 +490,24 @@ public class Order implements ReadData {
         String[] bagianPrint = input.split(" ", 2);
         String idPelanggan = bagianPrint[1];
         boolean cekIdPelanggan = true;
-        for (Pelanggan pelanggan : cart.keySet()) {
-            if (pelanggan.getIdPelanggan().equals(idPelanggan)) {
+        Pelanggan pelangganOrder = new Guest(idPelanggan);
+        for (Pelanggan getPelanggan : daftarPelanggan) {
+            if (getPelanggan.getIdPelanggan().equals(idPelanggan)) {
+                pelangganOrder = getPelanggan;
+                break;
+            }
+        }
+        for (Order order : kumpulanPesanan) {
+            if (order.getPelanggan().equals(pelangganOrder)) {
                 if (cekIdPelanggan) {
-                    System.out.println("Kode Pelanggan: " + pelanggan.getIdPelanggan());
-                    System.out.println("Nama: " + pelanggan.getFullName());
+                    System.out.println("Kode Pelanggan: " + pelangganOrder.getIdPelanggan());
+                    System.out.println("Nama: " + pelangganOrder.getFullName());
                     System.out.printf("%3s | %-20s | %3s | %8s \n", "No", "Menu", "Qty", "Subtotal");
                     System.out.print("=".repeat(50) + "\n");
                     cekIdPelanggan = false;
                 }
                 int i = 1;
-                Set<ItemPesanan> p = cart.get(pelanggan);
-                Map<Pelanggan, Set<ItemPesanan>> cart = new LinkedHashMap<>();
-                cart.computeIfAbsent(pelanggan, _ -> p);
-                Order order = new Order(cart);
-
-                for (ItemPesanan item : p) {
+                for (ItemPesanan item : order.getItem()) {
                     System.out.printf("%c %-3d %-23s %-5d %d\n", ' ',
                             i++, item.getMenu().getNamaMenu(), item.getKuantitas(),
                             item.getSubHarga());
@@ -396,8 +515,8 @@ public class Order implements ReadData {
                 System.out.print("=".repeat(50) + "\n");
                 System.out.printf("%-26s %-8c %d\n", "Total", ':', order.getSubTotalBiayaMakanan());
 
-                if (appliedPromo.containsKey(pelanggan) && appliedPromo.get(pelanggan) instanceof PercentOffPromo) {
-                    Promotion promoPelanggan = appliedPromo.get(pelanggan);
+                if (order.getAppliedPromo() != null && order.getAppliedPromo() instanceof PercentOffPromo) {
+                    Promotion promoPelanggan = order.getAppliedPromo();
                     double totalDiskon = promoPelanggan.totalDiscount(order);
                     order.setTotalDiskon(totalDiskon);
                     System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(), ':',
@@ -406,8 +525,8 @@ public class Order implements ReadData {
 
                 System.out.printf("%-26s %-8c %d\n", "Ongkos kirim", ':', ongkosKirim);
 
-                if (appliedPromo.containsKey(pelanggan) && appliedPromo.get(pelanggan) instanceof FreeShippingPromo) {
-                    Promotion promoPelanggan = appliedPromo.get(pelanggan);
+                if (order.getAppliedPromo() != null && order.getAppliedPromo() instanceof FreeShippingPromo) {
+                    Promotion promoPelanggan = order.getAppliedPromo();
                     double totalDiskon = promoPelanggan.totalDiscount(order);
                     order.setTotalDiskon(totalDiskon);
                     System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(), ':',
@@ -417,15 +536,15 @@ public class Order implements ReadData {
                 System.out.print("=".repeat(50) + "\n");
                 System.out.printf("%-26s %-8c %.0f\n", "Total", ':', order.getTotalHarga());
 
-                if (appliedPromo.containsKey(pelanggan) && appliedPromo.get(pelanggan) instanceof CashbackPromo) {
-                    Promotion promoPelanggan = appliedPromo.get(pelanggan);
+                if (order.getAppliedPromo() != null && order.getAppliedPromo() instanceof CashbackPromo) {
+                    Promotion promoPelanggan = order.getAppliedPromo();
                     double totalDiskon = promoPelanggan.totalDiscount(order);
                     order.setTotalDiskon(totalDiskon);
                     System.out.printf("%-6s %-19s %-8c %.0f\n", "Promo:", promoPelanggan.getKodePromo(), ':',
                             totalDiskon);
                 }
 
-                System.out.printf("%-26s %-8c %s\n", "Saldo", ':', pelanggan.getSaldoAwal());
+                System.out.printf("%-26s %-8c %s\n", "Saldo", ':', pelangganOrder.getSaldoAwal());
                 break;
             }
         }
@@ -434,37 +553,33 @@ public class Order implements ReadData {
     @Override
     public void loadCart() throws Exception {
         File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt");
-        Scanner in = new Scanner(file);
+        try (Scanner scanner = new Scanner(file)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty())
+                    continue;
 
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isEmpty())
-                continue;
+                String[] columns = line.split("\\|");
 
-            String[] columns = line.split("\\|");
+                String idPelanggan = columns[1].trim();
+                String idMenu = columns[2].trim();
+                String kuantitas = columns[3].trim();
 
-            String idPelanggan = columns[1].trim();
-            String idMenu = columns[2].trim();
-            String kuantitas = columns[3].trim();
+                Pelanggan pelanggan = daftarPelanggan.stream().filter(p -> p.getIdPelanggan().equals(idPelanggan))
+                        .findFirst().orElse(new Guest(idPelanggan));
+                Menu menu = daftarMenu.stream().filter(m -> m.getIdMenu().equals(idMenu)).findFirst()
+                        .orElse(new Menu(idMenu));
+                ItemPesanan item = new ItemPesanan(menu, Integer.parseInt(kuantitas));
 
-            Pelanggan pelangganCart = new Guest(idPelanggan);
-            for (Pelanggan pelanggan : daftarPelanggan) {
-                if (pelanggan.getIdPelanggan().equals(idPelanggan)) {
-                    pelangganCart = pelanggan;
-                    break;
-                }
+                Order existingOrder = kumpulanPesanan.stream().filter(order -> order.getPelanggan().equals(pelanggan))
+                        .findFirst()
+                        .orElseGet(() -> {
+                            Order newOrder = new Order(pelanggan, new LinkedHashSet<>(), null);
+                            kumpulanPesanan.add(newOrder);
+                            return newOrder;
+                        });
+                existingOrder.getItem().add(item);
             }
-
-            Menu menuCart = new Menu(idMenu);
-            for (Menu menu : daftarMenu) {
-                if (menu.getIdMenu().equals(idMenu)) {
-                    menuCart = menu;
-                    break;
-                }
-            }
-
-            ItemPesanan item = new ItemPesanan(menuCart, Integer.parseInt(kuantitas));
-            cart.computeIfAbsent(pelangganCart, _ -> new LinkedHashSet<>()).add(item);
         }
     }
 
@@ -571,5 +686,30 @@ public class Order implements ReadData {
 
             daftarPromo.add(promo);
         }
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((pelanggan == null) ? 0 : pelanggan.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Order other = (Order) obj;
+        if (pelanggan == null) {
+            if (other.pelanggan != null)
+                return false;
+        } else if (!pelanggan.equals(other.pelanggan))
+            return false;
+        return true;
     }
 }
