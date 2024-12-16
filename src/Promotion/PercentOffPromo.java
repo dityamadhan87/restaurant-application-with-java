@@ -4,22 +4,22 @@ import Order.Order;
 
 public class PercentOffPromo extends Promotion {
 
-    public PercentOffPromo(String kodePromo, String startDate, String endDate, String persenPotongan,
-            String maksPotongan,
-            String minPembelian) {
-        super(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
-        this.tipePromo = "DISCOUNT";
+    public PercentOffPromo(String promoCode, String startDate, String endDate, String percentDiscount,
+            String maxDiscount,
+            String minimumPurchase) {
+        super(promoCode, startDate, endDate, percentDiscount, maxDiscount, minimumPurchase);
+        this.promoType = "DISCOUNT";
     }
 
-    public PercentOffPromo(String kodePromo) {
-        super(kodePromo);
+    public PercentOffPromo(String promoCode) {
+        super(promoCode);
     }
 
     @Override
     public double totalDiscount(Order x) {
-        double discount = (Double.parseDouble(getPersenPotongan()) / 100) * x.getSubTotalBiayaMakanan();
-        if (discount > Double.parseDouble(getMaksPotongan())) {
-            return Double.parseDouble(getMaksPotongan());
+        double discount = (Double.parseDouble(getPercentDiscount()) / 100) * x.getSubTotalFoodCost();
+        if (discount > Double.parseDouble(getMaxDiscount())) {
+            return Double.parseDouble(getMaxDiscount());
         }
         return discount;
     }

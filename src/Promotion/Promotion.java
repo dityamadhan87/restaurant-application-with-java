@@ -1,38 +1,38 @@
 package Promotion;
 
+import CustomerPackage.*;
 import Order.Order;
-import Pelanggan.*;
 
 public abstract class Promotion implements Applicable{
-    String tipePromo;
-    private String kodePromo;
+    String promoType;
+    private String promoCode;
     private String startDate;
     private String endDate;
-    private String persenPotongan;
-    private String maksPotongan;
-    private String minPembelian;
+    private String percentDiscount;
+    private String maxDiscount;
+    private String minimumPurchase;
 
-    public Promotion(String kodePromo, String startDate, String endDate, String persenPotongan, String maksPotongan,
-            String minPembelian) {
-        this.tipePromo = "-";
-        this.kodePromo = kodePromo;
+    public Promotion(String promoCode, String startDate, String endDate, String percentDiscount, String maxDiscount,
+            String minimumPurchase) {
+        this.promoType = "-";
+        this.promoCode = promoCode;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.persenPotongan = persenPotongan;
-        this.maksPotongan = maksPotongan;
-        this.minPembelian = minPembelian;
+        this.percentDiscount = percentDiscount;
+        this.maxDiscount = maxDiscount;
+        this.minimumPurchase = minimumPurchase;
     }
 
-    public Promotion(String kodePromo) {
-        this.kodePromo = kodePromo;
+    public Promotion(String promoCode) {
+        this.promoCode = promoCode;
     }
 
-    public String getTipePromo() {
-        return tipePromo;
+    public String getPromoType() {
+        return promoType;
     }
 
-    public String getKodePromo() {
-        return kodePromo;
+    public String getPromoCode() {
+        return promoCode;
     }
 
     public String getStartDate() {
@@ -43,41 +43,41 @@ public abstract class Promotion implements Applicable{
         return endDate;
     }
 
-    public String getPersenPotongan() {
-        return persenPotongan;
+    public String getPercentDiscount() {
+        return percentDiscount;
     }
 
-    public String getMaksPotongan() {
-        return maksPotongan;
+    public String getMaxDiscount() {
+        return maxDiscount;
     }
 
-    public String getMinPembelian() {
-        return minPembelian;
+    public String getMinimumPurchase() {
+        return minimumPurchase;
     }
 
     @Override
-    public boolean isCustomerEligible(Pelanggan x) {
+    public boolean isCustomerEligible(Customer x) {
         if (x instanceof Member)
-            if (x.lamaMenjadiMember() > 30)
+            if (x.longTimeMember() > 30)
                 return true;
         return false;
     }
 
     @Override
     public boolean isMinimumPriceEligible(Order x) {
-        return x.getSubTotalBiayaMakanan() >= Integer.parseInt(minPembelian);
+        return x.getSubTotalFoodCost() >= Integer.parseInt(minimumPurchase);
     }
 
     @Override
     public boolean isShippingFeeEligible(Order x) {
-        return x.getOngkosKirim() >= 15000;
+        return x.getShippingCost() >= 15000;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((kodePromo == null) ? 0 : kodePromo.hashCode());
+        result = prime * result + ((promoCode == null) ? 0 : promoCode.hashCode());
         return result;
     }
 
@@ -88,6 +88,6 @@ public abstract class Promotion implements Applicable{
         if (obj == null || !(obj instanceof Promotion))
             return false;
         Promotion other = (Promotion) obj;
-        return kodePromo != null && kodePromo.equals(other.kodePromo);
+        return promoCode != null && promoCode.equals(other.promoCode);
     }
 }

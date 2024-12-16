@@ -1,0 +1,4 @@
+GUEST  | A001    | Raditya Rahmadhani        | -          | 110000
+GUEST  | A002    | Haikal Gibran             | -          | 20000
+MEMBER | A003    | Ayu Nadhiroh              | 2024/10/21 | 1000
+MEMBER | A004    | Fikri Iqbal               | 2024/08/01 | 40000

@@ -1,5 +1,0 @@
-GUEST  | A001    | Raditya Rahmadhani        | -          | 10000
-GUEST  | A002    | Haikal Gibran             | -          | 60000
-MEMBER | A003    | Ayu Nadhiroh              | 2024/10/21 | 43000
-MEMBER | A004    | Fikri Iqbal               | 2024/08/01 | 80000
-MEMBER | A005    | Bagus Setiawan            | 2023/04/03 | 110000

@@ -1,8 +1,0 @@
-GUEST  | A001    | M001  | 1
-MEMBER | A003    | M001  | 5
-GUEST  | A001    | M002  | 3
-MEMBER | A003    | M003  | 4
-GUEST  | A002    | M002  | 3
-MEMBER | A004    | M003  | 2
-GUEST  | A002    | M001  | 2
-MEMBER | A004    | M001  | 1

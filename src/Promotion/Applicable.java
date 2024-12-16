@@ -1,10 +1,10 @@
 package Promotion;
 
+import CustomerPackage.Customer;
 import Order.Order;
-import Pelanggan.Pelanggan;
 
 public interface Applicable {
-    boolean isCustomerEligible(Pelanggan x);
+    boolean isCustomerEligible(Customer x);
     boolean isMinimumPriceEligible(Order x);
     boolean isShippingFeeEligible(Order x);
     double totalDiscount(Order x);
