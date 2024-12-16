@@ -2,11 +2,8 @@ package BagianAdmin;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -38,7 +35,7 @@ public class Admin implements ReadData {
         String minPembelian = unitPromo[5];
 
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPromo.txt";
-        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
+        try (BufferedWriter output = new BufferedWriter(new FileWriter(filePath, true))) {
             Promotion promo;
             if (jenisPromo.equals("DELIVERY"))
                 promo = new FreeShippingPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
@@ -52,17 +49,19 @@ public class Admin implements ReadData {
                 System.out.println("CREATE PROMO " + jenisPromo + " FAILED: " + kodePromo + " IS EXISTS");
                 return;
             }
+            String line = String.format("%s %c %-10s %c %-10s %c %-10s %c %-4s %c %-7s %c %s\n", promo.getTipePromo(),
+                    '|', kodePromo,
+                    '|', startDate, '|', endDate, '|', persenPotongan, '|', maksPotongan, '|', minPembelian);
 
             daftarPromo.add(promo);
-            output.printf("%s %c %-10s %c %-10s %c %-10s %c %-4s %c %-7s %c %s\n", promo.getTipePromo(), '|', kodePromo,
-                    '|', startDate, '|', endDate, '|', persenPotongan, '|', maksPotongan, '|', minPembelian);
+            output.write(line);
             System.out.println("CREATE PROMO " + jenisPromo + " SUCCESS: " + kodePromo);
         }
     }
 
     public void createMenu(String input) throws Exception {
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarMenu.txt";
-        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
+        try (BufferedWriter output = new BufferedWriter(new FileWriter(filePath, true))) {
             String[] bagianMenu = input.split(" ", 3);
             String dataMenu = bagianMenu[2];
             String[] unitDataMenu = dataMenu.split("\\|");
@@ -77,15 +76,16 @@ public class Admin implements ReadData {
                 return;
             }
 
+            String line = String.format("%-7s %c %-20s %c %s\n", idMenu, '|', namaMenu, '|', hargaMenu);
             daftarMenu.add(menu);
-            output.printf("%-7s %c %-20s %c %s\n", idMenu, '|', namaMenu, '|', hargaMenu);
+            output.write(line);
             System.out.println("CREATE MENU SUCCESS: " + idMenu + " " + namaMenu);
         }
     }
 
     public void createGuest(String input) throws Exception {
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
-        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
+        try (BufferedWriter output = new BufferedWriter(new FileWriter(filePath, true))) {
             String[] bagianPelanggan = input.split(" ", 3);
             String dataPelanggan = bagianPelanggan[2];
             String[] unitDataPelanggan = dataPelanggan.split("\\|");
@@ -111,17 +111,19 @@ public class Admin implements ReadData {
                 return;
             }
 
-            daftarPelanggan.add(pelanggan);
-            output.printf("%-6s %c %-7s %c %-25s %c %-10s %c %s\n", pelanggan.getTipePelanggan(), '|', idPelanggan, '|',
+            String line = String.format("%-6s %c %-7s %c %-25s %c %-10s %c %s\n", pelanggan.getTipePelanggan(), '|',
+                    idPelanggan, '|',
                     namaPelanggan, '|',
                     pelanggan.getTanggalMenjadiMember(), '|', saldoAwal);
+            daftarPelanggan.add(pelanggan);
+            output.write(line);
             System.out.println("CREATE GUEST SUCCESS: " + idPelanggan);
         }
     }
 
     public void createMember(String input) throws Exception {
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
-        try (PrintWriter output = new PrintWriter(new FileWriter(filePath, true))) {
+        try (BufferedWriter output = new BufferedWriter(new FileWriter(filePath, true))) {
             String[] bagianPelanggan = input.split(" ", 3);
             String dataPelanggan = bagianPelanggan[2];
             String[] unitDataPelanggan = dataPelanggan.split("\\|");
@@ -147,11 +149,13 @@ public class Admin implements ReadData {
                 System.out.println("CREATE MEMBER FAILED: " + idPelanggan + " IS EXISTS");
                 return;
             }
-
-            daftarPelanggan.add(pelanggan);
-            output.printf("%-6s %c %-7s %c %-25s %c %-10s %c %s\n", pelanggan.getTipePelanggan(), '|', idPelanggan, '|',
+            String line = String.format("%-6s %c %-7s %c %-25s %c %-10s %c %s\n", pelanggan.getTipePelanggan(), '|',
+                    idPelanggan, '|',
                     namaPelanggan, '|',
                     tanggalMenjadiMember, '|', saldoAwal);
+
+            daftarPelanggan.add(pelanggan);
+            output.write(line);
             System.out.println("CREATE MEMBER SUCCESS: " + idPelanggan + " " + pelanggan.getFullName());
         }
     }
@@ -175,10 +179,9 @@ public class Admin implements ReadData {
         }
 
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
-        File file = new File(filePath);
         List<String> lines = new LinkedList<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] columns = line.split("\\|");
@@ -199,7 +202,7 @@ public class Admin implements ReadData {
             }
         }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             for (String line : lines) {
                 writer.write(line);
                 writer.newLine();
@@ -242,69 +245,67 @@ public class Admin implements ReadData {
 
     @Override
     public void loadMenu() throws Exception {
-        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarMenu.txt");
-        Scanner in = new Scanner(file);
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarMenu.txt";
 
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isEmpty())
-                continue;
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
 
-            String[] columns = line.split("\\|");
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty())
+                    continue;
 
-            String idMenu = columns[0].trim();
-            String namaMenu = columns[1].trim();
-            String hargaMenu = columns[2].trim();
+                String[] columns = line.split("\\|");
 
-            Menu menu = new Menu(idMenu, namaMenu, hargaMenu);
+                String idMenu = columns[0].trim();
+                String namaMenu = columns[1].trim();
+                String hargaMenu = columns[2].trim();
 
-            if (daftarMenu.contains(menu))
-                return;
+                Menu menu = new Menu(idMenu, namaMenu, hargaMenu);
 
-            daftarMenu.add(menu);
+                if (!daftarMenu.contains(menu))
+                    daftarMenu.add(menu);
+            }
         }
     }
 
     @Override
     public void loadPelanggan() throws Exception {
-        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt");
-        Scanner in = new Scanner(file);
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty())
+                    continue;
 
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isEmpty())
-                continue;
+                String[] columns = line.split("\\|");
 
-            String[] columns = line.split("\\|");
+                String tipePelanggan = columns[0].trim();
+                String idPelanggan = columns[1].trim();
+                String namaPelanggan = columns[2].trim();
+                String tanggalMenjadiMember = columns[3].trim();
+                String saldoAwal = columns[4].trim();
 
-            String tipePelanggan = columns[0].trim();
-            String idPelanggan = columns[1].trim();
-            String namaPelanggan = columns[2].trim();
-            String tanggalMenjadiMember = columns[3].trim();
-            String saldoAwal = columns[4].trim();
+                String firstName;
+                String lastName;
 
-            String firstName;
-            String lastName;
+                if (namaPelanggan.contains(" ")) {
+                    firstName = namaPelanggan.substring(0, namaPelanggan.indexOf(' '));
+                    lastName = namaPelanggan.substring(namaPelanggan.indexOf(' ') + 1);
+                } else {
+                    firstName = namaPelanggan;
+                    lastName = "";
+                }
 
-            if (namaPelanggan.contains(" ")) {
-                firstName = namaPelanggan.substring(0, namaPelanggan.indexOf(' '));
-                lastName = namaPelanggan.substring(namaPelanggan.indexOf(' ') + 1);
-            } else {
-                firstName = namaPelanggan;
-                lastName = "";
+                Pelanggan pelanggan;
+
+                if (tipePelanggan.equals("GUEST"))
+                    pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
+                else
+                    pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
+
+                if (!daftarPelanggan.contains(pelanggan))
+                    daftarPelanggan.add(pelanggan);
             }
-
-            Pelanggan pelanggan;
-
-            if (tipePelanggan.equals("GUEST"))
-                pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
-            else
-                pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
-
-            if (daftarPelanggan.contains(pelanggan))
-                return;
-
-            daftarPelanggan.add(pelanggan);
         }
     }
 
@@ -315,38 +316,38 @@ public class Admin implements ReadData {
 
     @Override
     public void loadPromo() throws Exception {
-        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPromo.txt");
-        Scanner in = new Scanner(file);
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPromo.txt";
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty())
+                    continue;
 
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isEmpty())
-                continue;
+                String[] columns = line.split("\\|");
 
-            String[] columns = line.split("\\|");
+                String jenisPromo = columns[0].trim();
+                String kodePromo = columns[1].trim();
+                String startDate = columns[2].trim();
+                String endDate = columns[3].trim();
+                String persenPotongan = columns[4].trim();
+                String maksPotongan = columns[5].trim();
+                String minPembelian = columns[6].trim();
 
-            String jenisPromo = columns[0].trim();
-            String kodePromo = columns[1].trim();
-            String startDate = columns[2].trim();
-            String endDate = columns[3].trim();
-            String persenPotongan = columns[4].trim();
-            String maksPotongan = columns[5].trim();
-            String minPembelian = columns[6].trim();
+                Promotion promo;
 
-            Promotion promo;
+                if (jenisPromo.equals("DELIVERY"))
+                    promo = new FreeShippingPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                            minPembelian);
+                else if (jenisPromo.equals("DISCOUNT"))
+                    promo = new PercentOffPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                            minPembelian);
+                else
+                    promo = new CashbackPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                            minPembelian);
 
-            if (jenisPromo.equals("DELIVERY"))
-                promo = new FreeShippingPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
-                        minPembelian);
-            else if (jenisPromo.equals("DISCOUNT"))
-                promo = new PercentOffPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
-            else
-                promo = new CashbackPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
-
-            if (daftarPromo.contains(promo))
-                return;
-
-            daftarPromo.add(promo);
+                if (!daftarPromo.contains(promo))
+                    daftarPromo.add(promo);
+            }
         }
     }
 }

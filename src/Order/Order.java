@@ -7,12 +7,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Scanner;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.LinkedList;
 
 import InterfaceRestaurant.ReadData;
 import Menu.Menu;
@@ -25,14 +23,13 @@ public class Order implements ReadData {
     private double totalDiskon;
     private int totalHarga;
     private Set<Order> kumpulanPesanan = new LinkedHashSet<>();
-    private Set<Order> historiPesanan = new LinkedHashSet<>();
+    private Set<DataHistori> historiPesanan = new LinkedHashSet<>();
     private Set<Menu> daftarMenu = new LinkedHashSet<>();
     private Set<Pelanggan> daftarPelanggan = new LinkedHashSet<>();
     private Set<Promotion> daftarPromo = new LinkedHashSet<>();
     private Promotion appliedPromo;
     private Pelanggan pelanggan;
     private Set<ItemPesanan> item;
-    private IdentitasCheckOut idenCheckOut;
 
     public Order(Pelanggan pelanggan, Set<ItemPesanan> item, Promotion appliedPromo) {
         this.pelanggan = pelanggan;
@@ -40,22 +37,7 @@ public class Order implements ReadData {
         this.appliedPromo = appliedPromo;
     }
 
-    public Order(IdentitasCheckOut idenCheckOut, Pelanggan pelanggan, Set<ItemPesanan> item, Promotion appliedPromo) {
-        this.idenCheckOut = idenCheckOut;
-        this.pelanggan = pelanggan;
-        this.item = item;
-        this.appliedPromo = appliedPromo;
-    }
-    
     public Order() {
-    }
-
-    public IdentitasCheckOut getIdenCheckOut() {
-        return idenCheckOut;
-    }
-
-    public void setIdenCheckOut(IdentitasCheckOut idenCheckOut) {
-        this.idenCheckOut = idenCheckOut;
     }
 
     public int getSubTotalBiayaMakanan() {
@@ -64,6 +46,19 @@ public class Order implements ReadData {
             subTotalBiayaMakanan += Integer.parseInt(itemPesanan.getMenu().getHargaMenu()) * itemPesanan.getKuantitas();
         }
         return subTotalBiayaMakanan;
+    }
+
+    public int getOngkosKirim() {
+        return ongkosKirim;
+    }
+
+    public void setTotalDiskon(double totalDiskon) {
+        this.totalDiskon = totalDiskon;
+    }
+
+    public double getTotalHarga() {
+        totalHarga = (int) (subTotalBiayaMakanan + ongkosKirim - totalDiskon);
+        return totalHarga;
     }
 
     public Promotion getAppliedPromo() {
@@ -82,28 +77,7 @@ public class Order implements ReadData {
         return item;
     }
 
-    public void setSubTotalBiayaMakanan(int subTotalBiayaMakanan) {
-        this.subTotalBiayaMakanan = subTotalBiayaMakanan;
-    }
-
-    public int getOngkosKirim() {
-        return ongkosKirim;
-    }
-
-    public void setTotalDiskon(double totalDiskon) {
-        this.totalDiskon = totalDiskon;
-    }
-
-    public double getTotalHarga() {
-        totalHarga = (int) (subTotalBiayaMakanan + ongkosKirim - totalDiskon);
-        return totalHarga;
-    }
-
-    public Set<Order> getKumpulanPesanan() {
-        return kumpulanPesanan;
-    }
-
-    public void checkOut(String input) throws Exception{
+    public void checkOut(String input) throws Exception {
         String[] checkOutPelanggan = input.split(" ", 2);
         String idPelanggan = checkOutPelanggan[1];
         Pelanggan pelangganOrder = new Guest(idPelanggan);
@@ -112,15 +86,15 @@ public class Order implements ReadData {
             if (getPelanggan.equals(pelangganOrder)) {
                 pelangganOrder = getPelanggan;
                 break;
-            } 
+            }
         }
 
         Order existingOrder = null;
-        for(Order order : kumpulanPesanan){
+        for (Order order : kumpulanPesanan) {
             if (order.getPelanggan().equals(pelangganOrder)) {
                 existingOrder = order;
                 break;
-            } 
+            }
         }
 
         if (existingOrder == null) {
@@ -129,14 +103,13 @@ public class Order implements ReadData {
         }
 
         if (Integer.parseInt(pelangganOrder.getSaldoAwal()) < existingOrder.getTotalHarga()) {
-            System.out.println("CHECK_OUT FAILED: " + idPelanggan + " " + pelangganOrder.getFullName() + " INSUFFICIENT BALANCE");
+            System.out.println(
+                    "CHECK_OUT FAILED: " + idPelanggan + " " + pelangganOrder.getFullName() + " INSUFFICIENT BALANCE");
             return;
         }
 
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\historiPesanan.txt";
         File file = new File(filePath);
-        List<String> lines = new LinkedList<>();
-        boolean isUpdated = false;
 
         int noPesanan = 0;
 
@@ -151,10 +124,71 @@ public class Order implements ReadData {
             }
         }
 
-        System.out.println(noPesanan);
+        noPesanan += 1;
+
+        int totalKuantitas = 0;
+        for (ItemPesanan itemPesanan : existingOrder.getItem()) {
+            totalKuantitas += itemPesanan.getKuantitas();
+        }
+
+        String kodePromo;
+        if (existingOrder.getAppliedPromo() == null) {
+            kodePromo = "-";
+        } else {
+            kodePromo = existingOrder.getAppliedPromo().getKodePromo();
+        }
+
+        LocalDate tanggalPesanan = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        String formattedDate = tanggalPesanan.format(formatter);
+
+        DataHistori x = new DataHistori(noPesanan, idPelanggan, totalKuantitas, existingOrder.getSubTotalBiayaMakanan(),
+                kodePromo, formattedDate);
+
+        String line = String.format("%-3s %c %-6s %c %-4s %c %-7s %c %-13s %c %s\n", noPesanan, '|',
+                existingOrder.getPelanggan().getIdPelanggan(), '|', totalKuantitas, '|',
+                existingOrder.getSubTotalBiayaMakanan(), '|', kodePromo, '|',
+                formattedDate);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
+            writer.write(line);
+        }
+
+        double sisaSaldo = Double.parseDouble(pelangganOrder.getSaldoAwal()) - existingOrder.getTotalHarga();
+        String filePathPelanggan = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
+        List<String> lines = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePathPelanggan))) {
+            String linePelanggan;
+            while ((linePelanggan = reader.readLine()) != null) {
+                String[] columns = linePelanggan.split("\\|");
+                String idPelangganFile = columns[1].trim();
+
+                if (idPelangganFile.equals(idPelanggan)) {
+                    linePelanggan = String.format("%-6s %c %-7s %c %-25s %c %-10s %c %.0f",
+                            pelangganOrder.getTipePelanggan(), '|',
+                            idPelanggan, '|', pelangganOrder.getFullName(), '|',
+                            pelangganOrder.getTanggalMenjadiMember(), '|', sisaSaldo);
+                    pelangganOrder.setSaldoAwal(String.valueOf(sisaSaldo));
+                }
+                lines.add(linePelanggan);
+            }
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePathPelanggan))) {
+            for (String linePelanggan : lines) {
+                writer.write(linePelanggan);
+                writer.newLine();
+            }
+        }
+        historiPesanan.add(x);
+        daftarPelanggan.remove(pelangganOrder);
+        daftarPelanggan.add(pelangganOrder);
+
+        System.out.println("CHECK_OUT SUCCESS: " + idPelanggan + " " + existingOrder.getPelanggan().getFullName());
     }
 
-    public void readPromo(String input){
+    public void readPromo(String input) {
         String[] promoPelanggan = input.split(" ", 2);
         String idPelanggan = promoPelanggan[1];
         Pelanggan pelangganOrder = new Guest(idPelanggan);
@@ -163,11 +197,11 @@ public class Order implements ReadData {
             if (getPelanggan.equals(pelangganOrder)) {
                 pelangganOrder = getPelanggan;
                 break;
-            } 
+            }
         }
 
         Order existingOrder = null;
-        for(Order order : kumpulanPesanan){
+        for (Order order : kumpulanPesanan) {
             if (order.getPelanggan().equals(pelangganOrder)) {
                 existingOrder = order;
                 break;
@@ -186,10 +220,10 @@ public class Order implements ReadData {
         System.out.println("=".repeat(66));
         System.out.println(" ".repeat(25) + "Eligible Promo");
         System.out.println("=".repeat(66));
-        
+
         List<Promotion> notEligiblePromo = new ArrayList<>();
 
-        for (Promotion promo : sortedPromotions){
+        for (Promotion promo : sortedPromotions) {
             if (!promo.isCustomerEligible(pelangganOrder)) {
                 notEligiblePromo.add(promo);
                 continue;
@@ -213,25 +247,27 @@ public class Order implements ReadData {
                 notEligiblePromo.add(promo);
                 continue;
             }
-    
+
             if (LocalDate.now().isAfter(tanggalExpired)) {
                 notEligiblePromo.add(promo);
                 continue;
             }
             System.out.printf("%-11s %-11s %-13s %-13s %-6s %s\n", promo.getTipePromo(), promo.getKodePromo(),
-                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(existingOrder));
+                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(),
+                    promo.totalDiscount(existingOrder));
         }
         System.out.println("=".repeat(66));
         System.out.println(" ".repeat(24) + "Not Eligible Promo");
         System.out.println("=".repeat(66));
 
-        for(Promotion promo : notEligiblePromo){
+        for (Promotion promo : notEligiblePromo) {
             System.out.printf("%-11s %-11s %-13s %-13s %-6s %s\n", promo.getTipePromo(), promo.getKodePromo(),
-                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(), promo.totalDiscount(existingOrder));
+                    promo.getStartDate(), promo.getEndDate(), promo.getPersenPotongan(),
+                    promo.totalDiscount(existingOrder));
         }
     }
 
-    public void applyPromo(String input){
+    public void applyPromo(String input) {
         String[] promoPelanggan = input.split(" ", 2);
         String promoDiterapkan = promoPelanggan[1];
         String[] unitDataPromo = promoDiterapkan.split(" ");
@@ -261,7 +297,7 @@ public class Order implements ReadData {
         }
 
         Order existingOrder = null;
-        for(Order order : kumpulanPesanan){
+        for (Order order : kumpulanPesanan) {
             if (order.getPelanggan().equals(pelangganOrder)) {
                 existingOrder = order;
                 break;
@@ -335,7 +371,7 @@ public class Order implements ReadData {
 
         String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt";
         File file = new File(filePath);
-        List<String> lines = new LinkedList<>();
+        List<String> lines = new ArrayList<>();
         boolean isUpdated = false;
 
         if (file.length() > 0) {
@@ -361,14 +397,14 @@ public class Order implements ReadData {
         }
 
         Order existingOrder = null;
-        for(Order order : kumpulanPesanan){
+        for (Order order : kumpulanPesanan) {
             if (order.getPelanggan().equals(pelangganOrder)) {
                 existingOrder = order;
                 break;
             }
         }
 
-        if(existingOrder == null){
+        if (existingOrder == null) {
             existingOrder = new Order(pelangganOrder, new LinkedHashSet<>(), null);
         }
 
@@ -409,14 +445,14 @@ public class Order implements ReadData {
         ItemPesanan item = new ItemPesanan(menuOrder, Integer.parseInt(kuantitas));
 
         Order existingOrder = null;
-        for(Order order : kumpulanPesanan){
+        for (Order order : kumpulanPesanan) {
             if (order.getPelanggan().equals(pelangganOrder)) {
                 existingOrder = order;
                 break;
             }
         }
 
-        if(existingOrder == null){
+        if (existingOrder == null) {
             existingOrder = new Order(pelangganOrder, new LinkedHashSet<>(), null);
         }
 
@@ -443,42 +479,42 @@ public class Order implements ReadData {
             }
         }
 
-        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt");
-        Scanner in = new Scanner(file);
-        List<String> lines = new LinkedList<>();
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt";
+        List<String> lines = new ArrayList<>();
 
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isEmpty())
-                continue;
-
-            String[] columns = line.split("\\|");
-            String idPelangganFile = columns[1].trim();
-            String idMenuFile = columns[2].trim();
-            String kuantitasFile = columns[3].trim();
-            if (idPelangganFile.equals(idPelanggan) && idMenuFile.equals(idMenu)) {
-                int totalKuantitas = Integer.parseInt(kuantitasFile) - Integer.parseInt(kuantitas);
-                if (totalKuantitas <= 0) {
-                    System.out.println("REMOVE FROM CART: " + menuOrder.getNamaMenu() + " IS REMOVED");
-                    existingOrder.getItem().remove(item);
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty())
                     continue;
-                }
-                line = String.format("%-6s %c %-7s %c %-5s %c %d", pelangganOrder.getTipePelanggan(), '|', idPelanggan,
-                        '|', idMenu, '|',
-                        totalKuantitas);
-                for (ItemPesanan itemPesanan : existingOrder.getItem()) {
-                    if (itemPesanan.equals(item)) {
-                        itemPesanan.setKuantitas(totalKuantitas);
-                        break;
+
+                String[] columns = line.split("\\|");
+                String idPelangganFile = columns[1].trim();
+                String idMenuFile = columns[2].trim();
+                String kuantitasFile = columns[3].trim();
+                if (idPelangganFile.equals(idPelanggan) && idMenuFile.equals(idMenu)) {
+                    int totalKuantitas = Integer.parseInt(kuantitasFile) - Integer.parseInt(kuantitas);
+                    if (totalKuantitas <= 0) {
+                        System.out.println("REMOVE FROM CART: " + menuOrder.getNamaMenu() + " IS REMOVED");
+                        existingOrder.getItem().remove(item);
+                        continue;
                     }
+                    line = String.format("%-6s %c %-7s %c %-5s %c %d", pelangganOrder.getTipePelanggan(), '|',
+                            idPelanggan, '|', idMenu, '|', totalKuantitas);
+                    for (ItemPesanan itemPesanan : existingOrder.getItem()) {
+                        if (itemPesanan.equals(item)) {
+                            itemPesanan.setKuantitas(totalKuantitas);
+                            break;
+                        }
+                    }
+                    System.out.println("REMOVE_FROM_CART SUCCESS: " + menuOrder.getNamaMenu()
+                            + " QUANTITY IS DECREMENTED");
                 }
-                System.out.println("REMOVE_FROM_CART SUCCESS: " + menuOrder.getNamaMenu()
-                        + " QUANTITY IS DECREMENTED");
+                lines.add(line);
             }
-            lines.add(line);
         }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             for (String line : lines) {
                 writer.write(line);
                 writer.newLine();
@@ -486,11 +522,25 @@ public class Order implements ReadData {
         }
     }
 
-    public void printDetails(String input){
+    public void printDetails(String input) {
         String[] bagianPrint = input.split(" ", 2);
         String idPelanggan = bagianPrint[1];
         boolean cekIdPelanggan = true;
         Pelanggan pelangganOrder = new Guest(idPelanggan);
+        String nomorPesanan = "";
+        String tanggalPesanan = "";
+        if (!historiPesanan.isEmpty()) {
+            for(DataHistori histori : historiPesanan){
+                if(histori.getIdPelanggan().equals(idPelanggan)){
+                    nomorPesanan = String.valueOf(histori.getNomorPesanan());
+                    tanggalPesanan = histori.getTanggalPesanan();
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+                    LocalDate tanggal = LocalDate.parse(tanggalPesanan, formatter);
+                    formatter = DateTimeFormatter.ofPattern("d MMMM yyyy");
+                    tanggalPesanan = tanggal.format(formatter);
+                }
+            }
+        }
         for (Pelanggan getPelanggan : daftarPelanggan) {
             if (getPelanggan.getIdPelanggan().equals(idPelanggan)) {
                 pelangganOrder = getPelanggan;
@@ -502,6 +552,8 @@ public class Order implements ReadData {
                 if (cekIdPelanggan) {
                     System.out.println("Kode Pelanggan: " + pelangganOrder.getIdPelanggan());
                     System.out.println("Nama: " + pelangganOrder.getFullName());
+                    System.out.println("Nomor Pesanan: " + nomorPesanan);
+                    System.out.println("Tanggal Pesanan: " + tanggalPesanan);
                     System.out.printf("%3s | %-20s | %3s | %8s \n", "No", "Menu", "Qty", "Subtotal");
                     System.out.print("=".repeat(50) + "\n");
                     cekIdPelanggan = false;
@@ -552,10 +604,10 @@ public class Order implements ReadData {
 
     @Override
     public void loadCart() throws Exception {
-        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt");
-        try (Scanner scanner = new Scanner(file)) {
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine().trim();
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\Pesanan.txt";
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
                 if (line.isEmpty())
                     continue;
 
@@ -585,106 +637,104 @@ public class Order implements ReadData {
 
     @Override
     public void loadMenu() throws Exception {
-        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarMenu.txt");
-        Scanner in = new Scanner(file);
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarMenu.txt";
 
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isEmpty())
-                continue;
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
 
-            String[] columns = line.split("\\|");
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty())
+                    continue;
 
-            String idMenu = columns[0].trim();
-            String namaMenu = columns[1].trim();
-            String hargaMenu = columns[2].trim();
+                String[] columns = line.split("\\|");
 
-            Menu menu = new Menu(idMenu, namaMenu, hargaMenu);
+                String idMenu = columns[0].trim();
+                String namaMenu = columns[1].trim();
+                String hargaMenu = columns[2].trim();
 
-            if (daftarMenu.contains(menu))
-                return;
+                Menu menu = new Menu(idMenu, namaMenu, hargaMenu);
 
-            daftarMenu.add(menu);
+                if (!daftarMenu.contains(menu))
+                    daftarMenu.add(menu);
+            }
         }
     }
 
     @Override
     public void loadPelanggan() throws Exception {
-        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt");
-        Scanner in = new Scanner(file);
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPelanggan.txt";
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty())
+                    continue;
 
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isEmpty())
-                continue;
+                String[] columns = line.split("\\|");
 
-            String[] columns = line.split("\\|");
+                String tipePelanggan = columns[0].trim();
+                String idPelanggan = columns[1].trim();
+                String namaPelanggan = columns[2].trim();
+                String tanggalMenjadiMember = columns[3].trim();
+                String saldoAwal = columns[4].trim();
 
-            String tipePelanggan = columns[0].trim();
-            String idPelanggan = columns[1].trim();
-            String namaPelanggan = columns[2].trim();
-            String tanggalMenjadiMember = columns[3].trim();
-            String saldoAwal = columns[4].trim();
+                String firstName;
+                String lastName;
 
-            String firstName;
-            String lastName;
+                if (namaPelanggan.contains(" ")) {
+                    firstName = namaPelanggan.substring(0, namaPelanggan.indexOf(' '));
+                    lastName = namaPelanggan.substring(namaPelanggan.indexOf(' ') + 1);
+                } else {
+                    firstName = namaPelanggan;
+                    lastName = "";
+                }
 
-            if (namaPelanggan.contains(" ")) {
-                firstName = namaPelanggan.substring(0, namaPelanggan.indexOf(' '));
-                lastName = namaPelanggan.substring(namaPelanggan.indexOf(' ') + 1);
-            } else {
-                firstName = namaPelanggan;
-                lastName = "";
+                Pelanggan pelanggan;
+
+                if (tipePelanggan.equals("GUEST"))
+                    pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
+                else
+                    pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
+
+                if (!daftarPelanggan.contains(pelanggan))
+                    daftarPelanggan.add(pelanggan);
             }
-
-            Pelanggan pelanggan;
-
-            if (tipePelanggan.equals("GUEST"))
-                pelanggan = new Guest(idPelanggan, firstName, lastName, saldoAwal);
-            else
-                pelanggan = new Member(idPelanggan, firstName, lastName, tanggalMenjadiMember, saldoAwal);
-
-            if (daftarPelanggan.contains(pelanggan))
-                return;
-
-            daftarPelanggan.add(pelanggan);
         }
     }
 
     @Override
     public void loadPromo() throws Exception {
-        File file = new File("D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPromo.txt");
-        Scanner in = new Scanner(file);
+        String filePath = "D:\\Programming\\java\\restaurant\\src\\DataRestaurant\\DaftarPromo.txt";
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty())
+                    continue;
 
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isEmpty())
-                continue;
+                String[] columns = line.split("\\|");
 
-            String[] columns = line.split("\\|");
+                String jenisPromo = columns[0].trim();
+                String kodePromo = columns[1].trim();
+                String startDate = columns[2].trim();
+                String endDate = columns[3].trim();
+                String persenPotongan = columns[4].trim();
+                String maksPotongan = columns[5].trim();
+                String minPembelian = columns[6].trim();
 
-            String jenisPromo = columns[0].trim();
-            String kodePromo = columns[1].trim();
-            String startDate = columns[2].trim();
-            String endDate = columns[3].trim();
-            String persenPotongan = columns[4].trim();
-            String maksPotongan = columns[5].trim();
-            String minPembelian = columns[6].trim();
+                Promotion promo;
 
-            Promotion promo;
+                if (jenisPromo.equals("DELIVERY"))
+                    promo = new FreeShippingPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                            minPembelian);
+                else if (jenisPromo.equals("DISCOUNT"))
+                    promo = new PercentOffPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                            minPembelian);
+                else
+                    promo = new CashbackPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
+                            minPembelian);
 
-            if (jenisPromo.equals("DELIVERY"))
-                promo = new FreeShippingPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan,
-                        minPembelian);
-            else if (jenisPromo.equals("DISCOUNT"))
-                promo = new PercentOffPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
-            else
-                promo = new CashbackPromo(kodePromo, startDate, endDate, persenPotongan, maksPotongan, minPembelian);
-
-            if (daftarPromo.contains(promo))
-                return;
-
-            daftarPromo.add(promo);
+                if (!daftarPromo.contains(promo))
+                    daftarPromo.add(promo);
+            }
         }
     }
 
